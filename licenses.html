@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>출처와 라이선스 · 함닷</title>
+<style>
+@font-face{font-family:"Pretendard";font-weight:400;font-display:swap;src:url("fonts/Pretendard-Regular.subset.woff2") format("woff2")}
+@font-face{font-family:"Pretendard";font-weight:700;font-display:swap;src:url("fonts/Pretendard-Bold.subset.woff2") format("woff2")}
+:root{--bg:#f3f5f7;--card:#fff;--ink:#1e2329;--muted:#6b7480;--line:#e4e8ec;--acc:#00873f}
+@media (prefers-color-scheme:dark){:root{--bg:#111315;--card:#1a1d20;--ink:#e8ebee;--muted:#9aa3ac;--line:#2a2f34;--acc:#45d98d;color-scheme:dark}}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.7 "Pretendard",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;word-break:keep-all;letter-spacing:-.01em}
+main{max-width:860px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:-.03em}
+h2{font-size:18px;margin:32px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+p.lead{color:var(--muted);margin:0 0 8px}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:16px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:0}
+th{color:var(--muted);font-weight:700;font-size:12.5px;white-space:nowrap}
+td:first-child{white-space:nowrap;font-weight:700}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+<h1>출처와 라이선스</h1>
+<p class="lead">함닷(HAMDOT) · 승현이 Claude(Anthropic)와 협업해 만들었습니다. <a href="index.html">도구로 돌아가기</a></p>
+<p class="lead">아래 기관과 서비스는 이 도구를 후원하거나 보증하지 않습니다. 이용 조건은 2026-11-04에 확인했습니다.</p>
+
+<h2>자료</h2>
+<div class="wrap"><table>
+<thead><tr><th>도구</th><th>자료 출처와 이용 방식</th></tr></thead>
+<tbody>
+<tr><td>점검 규칙, 바이트 기준</td><td>17개 시도교육청 「2026학년도 학교생활기록부 기재요령(고등학교)」, 「2026 학교생활기록부 기재요령 길라잡이(고등학교)」, 「2026학년도 경기도 고등학교용 나이스(NEIS) 교무업무 매뉴얼 Ⅰ」. 문서의 문장을 싣지 않고, 기재 불가·지양 항목을 점검 규칙으로 옮기고 근거 쪽수를 붙였습니다. 「학교생활기록 작성 및 관리지침」(교육부훈령)은 저작권법 제7조에 따라 보호받지 않는 저작물입니다.</td></tr>
+<tr><td>패턴 틀, 권장 구성</td><td>교육부·17개 시도교육청·한국교육과정평가원·한국교원대학교 종합교육연수원 「교과세특 기재 역량 강화 연수를 위한 교과세특 기재 예시 도움 자료」의 구성 요소(성취수준, 수행 과정·결과, 역량, 교사 총평)를 참고했습니다. 예시 문장은 싣지 않았고, 틀 문장은 제작자가 직접 썼습니다.</td></tr>
+<tr><td>아로리 사례 색인, 근래 패턴</td><td>서울대학교 입학본부 웹진 아로리 '나도 입학사정관'(<a href="https://snuarori.snu.ac.kr/admissions/officer">snuarori.snu.ac.kr</a>) 2014~2026학년도 117명, 학생부 발췌 574문단. 이 판에는 원문 문장이나 원문에서 뽑은 낱말을 싣지 않았습니다. 각 문단의 글자 수·바이트 수, 이 도구가 핵심어로 추정한 교과와 구조 태그, 연도별 집계 수치, 원문 페이지 링크만 실었습니다. 원문은 링크로 아로리에서 읽어 주세요.</td></tr>
+<tr><td>기관·상호명 사전</td><td>정부 부처·청·처, 공공기관, 기업·브랜드 이름을 제작자가 모은 목록입니다. 기재요령 p.19의 기재 불가 항목을 찾기 위한 용도로만 씁니다.</td></tr>
+</tbody></table></div>
+
+<h2>글꼴과 라이브러리</h2>
+<div class="wrap"><table>
+<thead><tr><th>구성 요소</th><th>판</th><th>라이선스</th></tr></thead>
+<tbody>
+<tr><td>Pretendard (fonts/)</td><td>1.3.9, 공식 배포본의 woff2-subset 파일 그대로</td><td>SIL Open Font License 1.1 · © Kil Hyung-jin, Reserved Font Name Pretendard · <a href="fonts/LICENSE-Pretendard.txt">전문</a></td></tr>
+<tr><td>JSZip (lib/)</td><td>3.10.1</td><td>MIT(이중 라이선스 중 선택) · © Stuart Knightley 외 · <a href="lib/LICENSE-jszip.md">전문</a></td></tr>
+<tr><td>pako (JSZip에 포함)</td><td>1.0.x</td><td>MIT · © Vitaly Puzrin, Andrei Tuputcyn · <a href="lib/LICENSE-pako.txt">전문</a></td></tr>
+</tbody></table></div>
+
+<h2>바깥 서비스 연결</h2>
+<div class="wrap"><table>
+<thead><tr><th>서비스</th><th>방식</th></tr></thead>
+<tbody>
+<tr><td>바른한글(부산대), 네이버 맞춤법 검사기</td><td>버튼을 누르면 입력한 문장을 클립보드에 복사하고 검사기를 새 탭으로 엽니다. 이 도구가 검사기에 직접 요청을 보내지 않습니다. 각 서비스의 이용 조건을 따라 주세요.</td></tr>
+<tr><td>표준국어대사전, 한국어 어문 규범</td><td>국립국어원 누리집 링크입니다.</td></tr>
+<tr><td>Claude 맞춤법 검사, 파일 저장 창</td><td>claude.ai 안에서 열었을 때만 작동합니다. 그 밖의 곳에서는 Claude 검사가 꺼지고, 엑셀은 브라우저 다운로드로 저장됩니다.</td></tr>
+</tbody></table></div>
+
+<h2>개인정보</h2>
+<p>불러온 엑셀과 입력한 문장은 브라우저 안에서만 처리합니다. 글꼴과 라이브러리도 이 저장소에서 바로 불러오므로, 도구를 쓰는 동안 바깥 서버로 나가는 요청은 없습니다.</p>
+<p>작업 중인 세특 문장, 학교 식별어, 직접 추가한 기관명은 이 기기의 브라우저 저장소(localStorage)에 남습니다. 학생 이름과 학생개인번호는 저장하지 않습니다. 공용 컴퓨터에서는 작업 후 브라우저의 사이트 데이터를 지워 주세요.</p>
+<p>claude.ai에서 Claude 맞춤법 검사를 누르면 세특 문장(이름 제외)이 Anthropic으로 전송됩니다. 외부 검사기에 붙여 넣은 문장은 그 서비스로 전송됩니다.</p>
+</main>
+</body>
+</html>

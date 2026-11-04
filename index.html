@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>함닷</title>
+<script src="lib/jszip.min.js"></script>
+<style>
+/* Layout: 상단 필터 시트 / 가운데 입력 원고 / 좌우 가장자리 탭으로 사례집·패턴 패널을 펼치는 세특 작성 도구 함닷(HAMDOT).
+   네이버 첫 화면을 참고: 회백색 바탕, 흰 둥근 카드, 초록 테두리의 둥근 입력창. 글꼴은 Pretendard 1.3.9 (SIL OFL 1.1). */
+@font-face{font-family:"Pretendard";font-weight:400;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Regular.subset.woff2") format("woff2")}
+@font-face{font-family:"Pretendard";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Medium.subset.woff2") format("woff2")}
+@font-face{font-family:"Pretendard";font-weight:600;font-style:normal;font-display:swap;src:url("fonts/Pretendard-SemiBold.subset.woff2") format("woff2")}
+@font-face{font-family:"Pretendard";font-weight:700;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Bold.subset.woff2") format("woff2")}
+:root{
+  --paper:#f3f5f7; --sheet:#ffffff; --ink:#1e2329; --muted:#6b7480; --line:#e4e8ec; --soft:#eef1f4;
+  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#00873f; --accent-wash:#e7f8ef; --accent-ink:#ffffff;
+  --err:#d93a2f; --warn:#a36200; --info:#2f63a8;
+  --err-bg:rgba(217,58,47,.13); --warn-bg:rgba(230,160,20,.22); --info-bg:rgba(47,99,168,.12);
+  --c1:#d93a2f; --c2:#00873f; --c3:#7b5cc4;
+  --shadow:0 1px 2px rgba(20,30,40,.04),0 2px 8px rgba(20,30,40,.04);
+  --f-sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  /* 글자 크기: 대주제일수록 크고 굵게 */
+  --fs-1:24px; --fs-2:18px; --fs-3:15px; --fs-4:14px; --fs-5:12.5px; --fs-6:11.5px;
+  --fw-1:700; --fw-2:700; --fw-3:600; --fw-4:400; --fw-5:400;
+  --r-card:16px; --r-ctl:999px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
+  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
+  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
+  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
+  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
+  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
+  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
+  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
+  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-sans);font-size:var(--fs-4);line-height:1.55;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;word-break:keep-all}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{height:100%;display:flex;flex-direction:column;gap:12px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num,.big,.stat b,.scale,.meta,.diag dd,.rank .n,.nums button,.findings .id{font-variant-numeric:tabular-nums}
+
+/* 1단계: 앱 제목 */
+.top{display:flex;flex-direction:column;gap:10px;flex:none}
+.brand{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.brand h1{font-size:var(--fs-1);font-weight:var(--fw-1);margin:0;letter-spacing:-.03em;display:flex;align-items:center;gap:9px}
+.brand h1 .mark{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:11px;background:var(--accent-fill);color:var(--accent-ink);font-size:16px;font-weight:700;letter-spacing:-.04em}
+.brand h1 small{font-size:var(--fs-6);font-weight:600;color:var(--muted);letter-spacing:.14em;align-self:flex-end;margin-bottom:5px}
+.brand p{margin:0;color:var(--muted);font-size:var(--fs-5)}
+
+/* 카드 공통 */
+.sheet,.panel{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.sheet{overflow:hidden}
+.sheet-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line)}
+.sheet-head h2{font-size:var(--fs-2);font-weight:var(--fw-2);margin:0;letter-spacing:-.02em}
+.tally{display:flex;gap:6px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-6);font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.err{background:var(--err-bg);color:var(--err)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+.pill.ok{background:var(--soft);color:var(--muted)}
+.pill.sp{background:transparent;color:var(--c3);box-shadow:inset 0 0 0 1px var(--c3)}
+.sheet-head .spacer{flex:1}
+.blk{display:flex;align-items:center;gap:6px;font-size:var(--fs-5);color:var(--muted)}
+.blk input{width:180px;max-width:42vw;padding:5px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper);font-size:var(--fs-5)}
+.blk input:focus{outline:none;border-color:var(--accent);background:var(--sheet)}
+.ghost{border:1px solid var(--line);background:var(--sheet);border-radius:var(--r-ctl);padding:5px 13px;font-size:var(--fs-5);cursor:pointer;line-height:1.3}
+.ghost:hover{border-color:var(--accent);color:var(--accent-text)}
+a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inherit}
+.btn{border:0;background:var(--accent-fill);color:var(--accent-ink);border-radius:var(--r-ctl);padding:6px 16px;font-size:var(--fs-5);font-weight:600;cursor:pointer;line-height:1.3}
+.btn:hover{background:var(--accent)}
+.btn:disabled,.ghost:disabled{opacity:.5;cursor:default}
+.tabs{display:flex;gap:2px;background:var(--soft);border-radius:var(--r-ctl);padding:3px}
+.tabs button{border:0;background:transparent;border-radius:var(--r-ctl);padding:4px 14px;font-size:var(--fs-5);cursor:pointer;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
+.findings{max-height:min(26vh,220px);overflow:auto}
+.findings table{width:100%;border-collapse:collapse;font-size:var(--fs-5)}
+.findings th{position:sticky;top:0;background:var(--sheet);text-align:left;font-weight:600;color:var(--muted);font-size:var(--fs-6);padding:7px 16px;border-bottom:1px solid var(--line)}
+.findings td{padding:7px 16px;border-bottom:1px solid var(--soft);vertical-align:top}
+.findings tr.row{cursor:pointer}
+.findings tr.row:hover td{background:var(--accent-wash)}
+.findings .id{font-size:var(--fs-6);color:var(--muted);white-space:nowrap}
+.findings .hit{font-weight:500}
+.findings .src{color:var(--muted);font-size:var(--fs-6);white-space:nowrap}
+.empty-note{padding:12px 16px;color:var(--muted);font-size:var(--fs-5)}
+.notice{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--fs-5);background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:8px 14px}
+
+/* 작업 영역 */
+.main{flex:1;min-height:0;display:flex;gap:10px}
+.rail{flex:none;width:44px;border:1px solid var(--line);background:var(--sheet);border-radius:var(--r-card);box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:12px 0}
+.rail span{writing-mode:vertical-rl;font-weight:600;font-size:var(--fs-5);letter-spacing:.14em;color:var(--muted)}
+.rail[aria-pressed="true"]{background:var(--accent-fill);border-color:var(--accent-fill)}
+.rail[aria-pressed="true"] span{color:var(--accent-ink)}
+.rail:hover span{color:var(--accent-text)}
+.rail[aria-pressed="true"]:hover span{color:var(--accent-ink)}
+.stage{flex:1;min-width:0;display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
+.stage.l,.stage.r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.stage.lr{grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr)}
+.panel{min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+/* 2단계: 패널 제목 */
+.panel-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line)}
+.panel-head h3{font-size:var(--fs-2);font-weight:var(--fw-2);margin:0;letter-spacing:-.02em}
+.panel-head .sub{color:var(--muted);font-size:var(--fs-5)}
+.panel-body{flex:1;min-height:0;overflow:auto;padding:14px 18px}
+
+/* 입력 원고: 네이버 검색창처럼 초록 테두리의 둥근 창 */
+.stage:not(.l):not(.r):not(.lr) .editor{width:100%;max-width:900px;justify-self:center}
+.editor .panel-body{display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.field{position:relative;flex:1;min-height:180px;border:2px solid var(--accent);border-radius:24px;background:var(--sheet);overflow:hidden;box-shadow:0 4px 16px rgba(3,199,90,.10);transition:box-shadow .15s}
+.field:focus-within{box-shadow:0 0 0 4px rgba(3,199,90,.14),0 4px 16px rgba(3,199,90,.12)}
+.field textarea,.field .backdrop{position:absolute;inset:0;margin:0;border:0;padding:18px 22px;font-family:var(--f-sans);font-size:16px;line-height:1.85;white-space:pre-wrap;overflow-wrap:break-word;word-break:keep-all;letter-spacing:-.01em}
+.field .backdrop{color:transparent;overflow:auto;pointer-events:none;scrollbar-width:none}
+.field .backdrop::-webkit-scrollbar{display:none}
+.field textarea{background:transparent;resize:none;width:100%;height:100%;overflow:auto;color:var(--ink);outline:none}
+.backdrop mark{color:transparent;border-radius:3px}
+.backdrop mark.err{background:var(--err-bg);box-shadow:inset 0 -2px 0 var(--err)}
+.backdrop mark.warn{background:var(--warn-bg);box-shadow:inset 0 -2px 0 var(--warn)}
+.backdrop mark.info{background:var(--info-bg)}
+.backdrop mark.sp{background:transparent;box-shadow:inset 0 -2px 0 var(--c3)}
+.meter{display:flex;flex-direction:column;gap:7px;flex:none;padding:0 4px}
+.meter-nums{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.big{font-size:28px;font-weight:700;letter-spacing:-.03em}
+.big small{font-size:var(--fs-4);color:var(--muted);font-weight:500}
+.big.over{color:var(--err)}
+.stat{font-size:var(--fs-5);color:var(--muted)}
+.stat b{font-weight:600;color:var(--ink)}
+.bar{position:relative;height:8px;border-radius:4px;background:var(--soft);overflow:visible}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:4px;transition:width .15s}
+.bar i.over{background:var(--err)}
+.bar .goal{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:1px;background:var(--warn)}
+.scale{display:flex;justify-content:space-between;font-size:var(--fs-6);color:var(--muted)}
+.meter-foot{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:var(--fs-5);color:var(--muted)}
+.meter-foot input{width:90px;padding:4px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper)}
+.meter-foot input:focus{outline:none;border-color:var(--accent)}
+.meter-foot .sp{flex:1}
+.meter-foot>span:last-child{font-size:var(--fs-6)}
+.modes{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--soft);border-radius:var(--r-ctl);padding:3px}
+.modes button{border:0;background:transparent;border-radius:var(--r-ctl);padding:4px 12px;font-size:var(--fs-5);cursor:pointer;color:var(--muted);white-space:nowrap}
+.modes button[aria-pressed="true"]{background:var(--accent-fill);color:var(--accent-ink);font-weight:600}
+.modes button small{font-size:var(--fs-6);opacity:.8;margin-left:4px;font-variant-numeric:tabular-nums}
+
+/* 패턴 틀 */
+.tpl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;flex:none}
+.tpl-l{font-size:var(--fs-5);font-weight:600;color:var(--ink);margin-right:2px}
+.tpl button{border:0;background:var(--accent-wash);color:var(--accent-text);border-radius:var(--r-ctl);padding:4px 12px;font-size:var(--fs-5);font-weight:500;cursor:pointer}
+.tpl button:hover{background:var(--accent);color:var(--accent-ink)}
+.tpl-hint{font-size:var(--fs-6);color:var(--muted);flex-basis:100%}
+
+/* 학급 */
+.classbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
+.classbar .file{display:inline-flex;align-items:center}
+.classinfo{font-size:var(--fs-5);color:var(--muted)}
+.classinfo b{color:var(--ink);font-weight:600}
+.roster{display:flex;flex-direction:column;gap:8px;flex:none}
+.nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nav strong{font-size:var(--fs-3);font-weight:var(--fw-3)}
+.nav .who{font-size:var(--fs-5);color:var(--muted)}
+.nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:5px}
+.nums button{height:28px;border-radius:8px;border:1px solid var(--line);background:var(--sheet);font-size:var(--fs-5);cursor:pointer;padding:0}
+.nums button.empty{border-style:dashed;color:var(--muted)}
+.nums button.ok{background:var(--soft)}
+.nums button.warn{background:var(--warn-bg);border-color:var(--warn)}
+.nums button.err{background:var(--err-bg);border-color:var(--err)}
+.nums button.cur{outline:2px solid var(--accent);outline-offset:1px;font-weight:700}
+.legend2{display:flex;gap:10px;flex-wrap:wrap;font-size:var(--fs-6);color:var(--muted)}
+.legend2 span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;border:1px solid var(--line)}
+.legend2 .l-empty::before{border-style:dashed}
+.legend2 .l-ok::before{background:var(--soft)}
+.legend2 .l-warn::before{background:var(--warn-bg);border-color:var(--warn)}
+.legend2 .l-err::before{background:var(--err-bg);border-color:var(--err)}
+.dups{padding:10px 16px;display:grid;gap:4px;font-size:var(--fs-5);border-top:1px solid var(--line)}
+.dups h4{margin:0;font-size:var(--fs-5);color:var(--muted);font-weight:600}
+.num{text-align:right}
+
+/* 맞춤법 */
+.sp-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--soft)}
+.sp-bar .status{font-size:var(--fs-5);color:var(--muted)}
+.sp-ext{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--soft);font-size:var(--fs-5)}
+.sp-ext>span{color:var(--muted);margin-right:2px}
+.sp-chunks{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
+.sp-note{padding:0 16px 12px;margin:0;font-size:var(--fs-6);color:var(--muted)}
+.fix{font-size:var(--fs-5)}
+.fix del{color:var(--err);text-decoration:line-through}
+.fix ins{color:var(--accent-text);text-decoration:none;font-weight:600}
+
+/* 사례집 */
+.filters{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--sheet)}
+.filters select{padding:5px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper);font-size:var(--fs-5)}
+.note{font-size:var(--fs-5);color:var(--muted);background:var(--soft);border-radius:12px;padding:10px 14px;margin:0 0 12px}
+.cases{display:flex;flex-direction:column;gap:10px}
+.case{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:6px;background:var(--sheet)}
+.case:hover{border-color:var(--accent)}
+.case-top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.case-top strong{font-size:var(--fs-4);font-weight:600}
+.case-top .meta{font-size:var(--fs-6);color:var(--muted)}
+.case-top a{margin-left:auto;font-size:var(--fs-5);font-weight:600;color:var(--accent-text);text-decoration:none;white-space:nowrap}
+.case-top a:hover{text-decoration:underline}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font-size:var(--fs-6);padding:0 8px;border-radius:999px;background:var(--soft);color:var(--muted);line-height:20px}
+.chip.subj{background:var(--accent-wash);color:var(--accent-text);font-weight:600}
+.chip.judge{background:var(--warn-bg);color:var(--warn)}
+.flow{font-size:var(--fs-5);color:var(--ink)}
+.flow .arr{color:var(--muted);padding:0 3px}
+.more{margin-top:10px}
+
+/* 패턴 */
+.sec{display:grid;gap:8px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--soft)}
+.sec:last-child{border-bottom:0}
+/* 3단계: 섹션 제목 */
+.sec h4{margin:0;font-size:var(--fs-3);font-weight:var(--fw-3)}
+.sec p{margin:0;font-size:var(--fs-5);color:var(--muted)}
+.diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.diag div{background:var(--soft);border-radius:12px;padding:9px 12px}
+.diag dt{font-size:var(--fs-6);color:var(--muted)}
+.diag dd{margin:0;font-size:20px;font-weight:700}
+.diag dd small{font-size:var(--fs-6);color:var(--muted);font-weight:400}
+.myflow{font-size:var(--fs-5)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-6);color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+svg.chart{width:100%;height:auto;display:block}
+svg.chart text{fill:var(--muted);font-family:var(--f-sans);font-size:9px}
+svg.chart .grid{stroke:var(--line);stroke-width:1}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rank{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:var(--fs-5)}
+.rank li{display:flex;align-items:center;gap:6px}
+.rank .w{width:5.5em;flex:none}
+.rank .b{height:7px;border-radius:4px;background:var(--accent)}
+.rank .n{font-size:var(--fs-6);color:var(--muted)}
+.rank.alt .b{background:var(--warn)}
+.colh{font-size:var(--fs-6);color:var(--muted);margin-bottom:4px;font-weight:600}
+.steps{margin:0;padding-left:18px;font-size:var(--fs-5);display:grid;gap:4px}
+.steps b{font-weight:600}
+.cite{font-size:var(--fs-6);color:var(--muted)}
+
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{height:auto}
+  .main{flex-direction:column}
+  .stage{order:1}
+  .rails{display:flex;gap:8px}
+  .rail{width:auto;flex:1;padding:10px}
+  .rail span{writing-mode:horizontal-tb;letter-spacing:.02em}
+  .stage,.stage.l,.stage.r,.stage.lr{grid-template-columns:minmax(0,1fr)}
+  .cases-panel .panel-body,.pat-panel .panel-body{max-height:70vh}
+  .field{min-height:300px}
+  .cols{grid-template-columns:1fr}
+  .brand h1{font-size:21px}
+}
+@media (min-width:861px){.rails{display:contents}}
+@media (prefers-reduced-motion:reduce){.bar i,.field{transition:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT</small></h1>
+      <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
+      <div class="classbar">
+        <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
+        <label class="ghost file" for="xlsx">학급 엑셀 불러오기<input id="xlsx" type="file" accept=".xlsx" hidden></label>
+        <button class="btn" id="saveX" hidden>NEIS 업로드용 엑셀 저장</button>
+        <button class="ghost" id="closeX" hidden>학급 닫기</button>
+      </div>
+    </div>
+    <div class="notice" id="notice" hidden></div>
+    <section class="sheet" aria-labelledby="sheet-title">
+      <div class="sheet-head">
+        <h2 id="sheet-title">필터링 시트</h2>
+        <div class="tabs" role="tablist" id="tabs">
+          <button role="tab" id="tabOne" aria-selected="true">규정 점검</button>
+          <button role="tab" id="tabSp" aria-selected="false">맞춤법</button>
+          <button role="tab" id="tabAll" aria-selected="false" hidden>학급 전체</button>
+        </div>
+        <div class="tally" id="tally"></div>
+        <span class="spacer"></span>
+        <label class="blk" for="blocked">학교 식별어
+          <input id="blocked" type="text" placeholder="학교명, 축제명 (쉼표로 구분)">
+        </label>
+        <label class="blk" for="orgs">기관·상호 추가
+          <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)">
+        </label>
+      </div>
+      <div class="findings" id="findings"></div>
+      <div class="findings" id="classView" hidden></div>
+      <div id="spellView" hidden>
+        <div class="sp-bar">
+          <button class="btn" id="spOne">Claude로 맞춤법·띄어쓰기 검사</button>
+          <button class="ghost" id="spAll" hidden>학급 전체 검사</button>
+          <button class="ghost" id="spStop" hidden>중지</button>
+          <button class="ghost" id="spApplyAll" hidden>모두 적용</button>
+          <span class="status" id="spStatus">검사 결과는 보조 의견입니다. 최종 확인은 아래 검사기나 사전으로 하세요.</span>
+        </div>
+        <div class="findings" id="spList"></div>
+        <div class="sp-ext">
+          <span>외부 검사기로 확인</span>
+          <a class="ghost ext" href="https://nara-speller.co.kr/speller/" target="_blank" rel="noopener">바른한글(부산대) ↗</a>
+          <a class="ghost ext" id="extNv" href="https://search.naver.com/search.naver?query=%EB%A7%9E%EC%B6%A4%EB%B2%95%20%EA%B2%80%EC%82%AC%EA%B8%B0" target="_blank" rel="noopener">네이버 ↗</a>
+          <a class="ghost" href="https://stdict.korean.go.kr/" target="_blank" rel="noopener">표준국어대사전 ↗</a>
+          <a class="ghost" href="https://kornorms.korean.go.kr/" target="_blank" rel="noopener">한국어 어문 규범 ↗</a>
+        </div>
+        <div class="sp-chunks" id="nvChunks"></div>
+        <p class="sp-note">검사기 버튼을 누르면 지금 문장이 복사되고 새 탭이 열립니다. 붙여 넣기만 하면 됩니다. 네이버는 한 번에 300자까지만 검사되는 것으로 알려져 있어, 300자를 넘으면 문장 단위 조각 복사 버튼이 생깁니다. 국립국어원은 맞춤법 검사기를 따로 운영하지 않아 사전과 어문 규범으로 연결했습니다.</p>
+      </div>
+    </section>
+  </header>
+
+  <div class="main">
+    <div class="rails">
+      <button class="rail" id="btnL" aria-pressed="false" aria-controls="casesPanel"><span>아로리 사례집</span></button>
+    </div>
+    <div class="stage" id="stage">
+      <section class="panel cases-panel" id="casesPanel" hidden>
+        <div class="panel-head"><h3>아로리 사례집</h3><span class="sub" id="caseCount"></span></div>
+        <div class="filters">
+          <select id="fSubj" aria-label="교과"></select>
+          <select id="fYear" aria-label="학년도"></select>
+          <select id="fTag" aria-label="구조 태그">
+            <option value="">구조 전체</option>
+            <option value="확장">확장 연결어 있음</option>
+            <option value="동기">계기 서술 있음</option>
+            <option value="방법">방법 서술 있음</option>
+            <option value="도서">도서(저자) 있음</option>
+            <option value="수치">수치 있음</option>
+            <option value="평가어">평가어 있음</option>
+            <option value="!평가어">평가어 없음</option>
+          </select>
+        </div>
+        <div class="panel-body">
+          <p class="note">서울대 아로리 '나도 입학사정관'에 실린 학생부 발췌 574문단(2019~2026학년도, 117명 전원 합격자)의 색인입니다. 원문은 서울대 입학본부 저작물이라 이 앱에 옮기지 않았고, '원문'을 누르면 해당 학생 페이지가 새 탭으로 열립니다. 교과와 구조 태그는 이 도구가 핵심어로 추정한 값입니다.</p>
+          <div class="cases" id="cases"></div>
+          <button class="ghost more" id="moreBtn" hidden>더 보기</button>
+        </div>
+      </section>
+
+      <section class="panel editor" aria-labelledby="ed-title">
+        <div class="panel-head">
+          <h3 id="ed-title">세특 입력</h3>
+          <span class="sub" id="edSub">예시 문장이 들어 있습니다. 지우고 붙여 넣으세요.</span>
+          <span style="flex:1"></span>
+          <button class="ghost" id="clearBtn">지우기</button>
+          <button class="ghost" id="sampleBtn">예시 넣기</button>
+        </div>
+        <div class="panel-body">
+          <div class="roster" id="roster" hidden>
+            <div class="nav">
+              <button class="ghost" id="prevS" aria-label="이전 학생">◀ 이전</button>
+              <strong id="curS"></strong><span class="who" id="curWho"></span>
+              <button class="ghost" id="nextS" aria-label="다음 학생">다음 ▶</button>
+              <span style="flex:1"></span>
+              <div class="legend2"><span class="l-empty">미입력</span><span class="l-ok">통과</span><span class="l-warn">확인</span><span class="l-err">오류·초과</span></div>
+            </div>
+            <div class="nums" id="nums"></div>
+          </div>
+          <div class="tpl">
+            <span class="tpl-l">패턴 틀</span>
+            <span id="tplChips" style="display:contents"></span>
+            <span class="tpl-hint" id="tplHint">틀을 누르면 커서 위치에 들어갑니다. 〔 〕 빈칸은 Tab으로 다음 칸, Shift+Tab으로 이전 칸으로 이동하며 바로 덮어쓸 수 있습니다.</span>
+          </div>
+          <div class="field">
+            <div class="backdrop" id="backdrop" aria-hidden="true"></div>
+            <textarea id="src" spellcheck="false" aria-label="세특 문장 입력"></textarea>
+          </div>
+          <div class="meter" aria-live="polite">
+            <div class="meter-nums">
+              <div class="big" id="bytes">0 <small>/ 1,500 Byte</small></div>
+              <div class="stat">글자 <b id="chars">0</b>자</div>
+              <div class="stat">한글 등 <b id="multi">0</b> × 3</div>
+              <div class="stat">영문·숫자·공백 <b id="single">0</b> × 1</div>
+              <div class="stat" id="remain"></div>
+            </div>
+            <div class="bar" id="bar"><i id="fill"></i></div>
+            <div class="scale" id="scale"><span>0</span><span>500</span><span>1,000</span><span>1,500 Byte</span></div>
+            <div class="meter-foot">
+              <label for="goal">목표 바이트</label><input id="goal" type="number" min="0" max="1500" step="10" placeholder="예: 900">
+              <div class="modes" role="group" aria-label="기재 영역" id="modes">
+                <button data-m="subj" aria-pressed="true">교과 세특<small>1500</small></button>
+                <button data-m="auto" aria-pressed="false">자율·자치<small>1500</small></button>
+                <button data-m="club" aria-pressed="false">동아리<small>1500</small></button>
+                <button data-m="career" aria-pressed="false">진로<small>1500</small></button>
+                <button data-m="beh" aria-pressed="false">행동특성 및 종합의견<small>900</small></button>
+              </div>
+              <span class="sp"></span>
+              <span>계산식: 한글 등 3Byte, 그 외 1Byte, 엔터 1Byte (엑셀 =(LENB−LEN)*3+(LEN*2−LENB)과 같음, 기재요령 p.208). NEIS가 자동으로 붙이는 과목명·(학기)는 1,500Byte에 들어가지 않음 (NEIS 매뉴얼Ⅰ p.514)</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel pat-panel" id="patPanel" hidden>
+        <div class="panel-head"><h3>근래 패턴</h3><span class="sub">아로리 발췌 기준</span></div>
+        <div class="panel-body" id="patBody"></div>
+      </section>
+    </div>
+    <div class="rails">
+      <button class="rail" id="btnR" aria-pressed="false" aria-controls="patPanel"><span>근래 패턴</span></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const AR="https://snuarori.snu.ac.kr/admissions/officer?md=view&dataidx=";
+// [학년도, 학과, 학생, dataidx, [[교과(추정), 글자수, 바이트, 태그, ""]...]] — 공개판에는 원문에서 뽑은 끝 서술어 흐름을 싣지 않음
+const IDX=[[2026,"경영대학","A",810,[["사회",316,784,"동기방법확장",""],["사회",353,881,"방법확장",""],["사회",263,653,"방법도서",""],["사회",317,787,"방법",""],["수학",275,687,"확장",""],["국어",249,627,"동기방법확장",""],["수학",366,898,"동기방법확장수치",""],["영어",276,640,"방법확장",""],["사회",366,908,"방법도서",""],["창체·행특",291,713,"방법",""],["창체·행특",236,584,"",""]]],[2026,"경영대학","B",809,[["국어",346,854,"방법도서수치",""],["사회",296,740,"방법",""],["사회",308,776,"방법확장",""],["국어",283,707,"방법확장도서",""],["수학",270,684,"동기방법확장",""],["사회",342,864,"방법확장",""],["사회",313,765,"방법확장",""],["국어",255,629,"",""],["기타",211,521,"동기방법확장수치",""],["수학",308,766,"동기방법확장도서평가어수치",""],["창체·행특",206,508,"평가어",""]]],[2026,"경영대학","C",808,[["국어",314,786,"방법도서",""],["사회",361,889,"방법확장수치",""],["과학",270,668,"방법수치",""],["사회",281,643,"방법도서",""],["사회",302,740,"방법수치",""],["국어",289,673,"방법도서",""],["사회",309,749,"방법",""],["수학",286,704,"동기방법확장",""],["사회",363,907,"방법",""],["사회",301,757,"방법",""],["창체·행특",176,436,"확장평가어",""]]],[2026,"사회과학대학 언론정보학과","A",816,[["수학",317,777,"동기방법수치",""],["영어",333,761,"동기도서",""],["사회",307,769,"방법",""],["국어",346,858,"동기방법확장도서",""],["국어",307,765,"방법확장도서",""],["수학",240,604,"방법",""],["수학",326,812,"방법확장수치",""],["사회",331,821,"방법확장도서",""],["사회",421,1047,"방법확장도서",""],["사회",415,1041,"방법확장",""],["기타",197,499,"동기확장",""]]],[2026,"사회과학대학 언론정보학과","B",815,[["영어",295,727,"동기방법확장도서",""],["과학",308,762,"방법",""],["사회",225,531,"동기방법확장도서",""],["국어",315,781,"방법도서",""],["수학",334,834,"동기방법",""],["사회",266,658,"도서",""],["영어",374,796,"방법확장도서",""],["사회",337,837,"방법",""],["사회",363,881,"방법도서",""],["사회",370,916,"동기방법",""],["창체·행특",172,428,"동기",""]]],[2026,"사회과학대학 언론정보학과","C",814,[["국어",299,731,"동기방법도서",""],["수학",237,585,"동기방법확장수치",""],["영어",371,907,"방법확장도서",""],["사회",300,744,"방법도서",""],["수학",330,826,"방법",""],["영어",207,513,"방법확장",""],["영어",185,451,"방법",""],["수학",255,627,"방법도서",""],["사회",387,961,"동기방법확장",""],["영어",274,668,"방법확장수치",""],["창체·행특",159,397,"평가어",""]]],[2026,"자연과학대학 통계학과","A",813,[["수학",301,747,"동기방법",""],["영어",262,650,"방법",""],["국어",328,812,"동기방법확장도서",""],["수학",249,617,"방법",""],["수학",331,781,"방법확장도서수치",""],["과학",326,804,"방법수치",""],["수학",320,792,"동기방법확장수치",""],["과학",348,864,"방법확장수치",""],["과학",314,784,"동기방법확장",""],["수학",337,831,"방법",""],["창체·행특",215,531,"확장",""]]],[2026,"자연과학대학 통계학과","B",812,[["수학",306,768,"방법확장",""],["예체능",218,552,"방법",""],["사회",332,818,"방법확장도서",""],["국어",316,784,"도서수치",""],["수학",246,626,"방법",""],["국어",359,885,"동기방법도서",""],["수학",327,813,"방법확장도서",""],["영어",203,501,"방법도서",""],["과학",245,613,"동기방법확장수치",""],["수학",337,839,"방법도서수치",""],["수학",231,573,"동기방법",""]]],[2026,"자연과학대학 통계학과","C",811,[["사회",295,731,"확장수치",""],["국어",359,895,"방법확장도서",""],["사회",332,810,"방법확장도서수치",""],["과학",248,622,"동기방법확장",""],["과학",381,949,"방법수치",""],["수학",291,721,"동기방법확장수치",""],["정보",382,958,"동기방법확장",""],["과학",337,851,"방법확장수치",""],["과학",306,768,"방법확장",""],["정보",260,654,"방법수치",""],["창체·행특",211,529,"",""]]],[2025,"공과대학 컴퓨터공학부","A",799,[["국어",275,681,"방법평가어",""],["영어",376,936,"확장평가어",""],["수학",354,868,"방법평가어",""],["정보",356,886,"방법평가어",""],["예체능",299,743,"방법평가어",""],["창체·행특",389,963,"방법확장평가어수치",""],["창체·행특",323,803,"동기평가어",""]]],[2025,"공과대학 컴퓨터공학부","B",800,[["국어",389,945,"방법확장평가어",""],["수학",369,893,"방법확장평가어수치",""],["영어",411,1015,"동기방법평가어",""],["기타",405,979,"방법도서평가어",""],["과학",460,1142,"동기방법확장평가어",""],["수학",343,843,"방법확장평가어",""],["국어",254,624,"동기도서",""],["창체·행특",320,766,"동기방법평가어수치",""]]],[2025,"공과대학 컴퓨터공학부","C",801,[["국어",356,858,"방법도서평가어",""],["영어",347,801,"도서평가어",""],["정보",287,689,"동기도서평가어",""],["예체능",391,949,"방법수치",""],["과학",367,899,"동기확장평가어",""],["정보",244,602,"방법",""],["정보",298,738,"방법",""],["창체·행특",388,950,"동기평가어",""]]],[2025,"농업생명과학대학 스마트시스템과학과","A",805,[["국어",303,745,"방법도서평가어",""],["수학",358,882,"동기평가어",""],["영어",244,598,"평가어수치",""],["수학",245,609,"동기평가어",""],["창체·행특",362,890,"평가어수치",""],["창체·행특",292,696,"방법평가어수치",""],["창체·행특",330,818,"평가어수치",""],["창체·행특",205,507,"평가어수치",""]]],[2025,"농업생명과학대학 스마트시스템과학과","B",806,[["사회",412,1008,"방법확장도서평가어수치",""],["수학",336,822,"동기방법평가어수치",""],["영어",245,609,"동기",""],["과학",391,921,"동기방법평가어수치",""],["과학",248,618,"방법",""],["창체·행특",325,799,"평가어",""],["창체·행특",291,719,"평가어",""]]],[2025,"농업생명과학대학 스마트시스템과학과","C",807,[["국어",312,778,"도서평가어",""],["수학",262,648,"방법확장평가어",""],["정보",359,883,"확장평가어",""],["과학",228,566,"동기평가어",""],["과학",312,764,"동기방법도서",""],["창체·행특",333,839,"방법평가어",""],["창체·행특",381,933,"동기확장평가어수치",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","A",802,[["국어",263,641,"방법도서",""],["수학",383,949,"방법평가어",""],["기타",397,983,"동기방법평가어",""],["사회",405,995,"방법평가어",""],["사회",295,725,"방법확장평가어",""],["수학",174,430,"방법평가어",""],["창체·행특",334,822,"",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","B",803,[["영어",322,792,"방법평가어",""],["수학",311,777,"방법평가어",""],["영어",348,870,"동기평가어",""],["기타",330,810,"방법확장평가어",""],["사회",322,794,"방법도서",""],["창체·행특",226,550,"방법평가어",""],["사회",354,874,"동기",""],["창체·행특",333,823,"평가어",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","C",804,[["사회",261,617,"도서평가어수치",""],["국어",379,923,"방법확장도서수치",""],["영어",369,867,"평가어",""],["사회",292,718,"동기방법평가어",""],["사회",306,738,"동기방법확장도서",""],["창체·행특",227,561,"평가어",""],["수학",274,682,"확장평가어",""]]],[2024,"공과대학 조선해양공학과","A",793,[["기타",253,629,"방법",""],["국어",213,523,"방법확장도서",""],["예체능",341,849,"동기방법확장평가어",""],["영어",285,653,"방법확장평가어",""],["과학",243,589,"방법도서평가어",""],["창체·행특",307,777,"방법",""],["창체·행특",244,586,"평가어수치",""]]],[2024,"공과대학 조선해양공학과","B",794,[["국어",359,881,"",""],["수학",388,956,"방법평가어",""],["국어",436,1074,"동기방법확장도서평가어",""],["과학",321,775,"방법평가어",""],["과학",291,725,"동기방법도서",""],["정보",261,619,"방법",""],["과학",299,737,"동기확장수치",""],["창체·행특",125,311,"평가어",""],["창체·행특",183,457,"평가어",""]]],[2024,"공과대학 조선해양공학과","C",795,[["국어",229,565,"동기확장평가어수치",""],["과학",244,608,"평가어",""],["국어",400,994,"동기확장평가어",""],["사회",409,1023,"확장평가어",""],["수학",155,387,"동기방법",""],["수학",316,786,"방법평가어수치",""],["과학",146,360,"평가어",""],["창체·행특",219,533,"평가어",""]]],[2024,"사범대학 교육학과","A",790,[["사회",244,600,"확장평가어",""],["기타",293,725,"방법확장평가어",""],["기타",258,622,"방법평가어",""],["수학",325,813,"방법평가어",""],["창체·행특",331,811,"방법평가어",""],["수학",290,714,"동기평가어",""],["기타",296,732,"방법평가어",""],["창체·행특",153,377,"동기평가어",""]]],[2024,"사범대학 교육학과","B",791,[["국어",197,483,"동기평가어",""],["국어",246,600,"평가어",""],["수학",340,850,"방법평가어",""],["사회",300,748,"동기방법평가어",""],["영어",262,648,"동기확장평가어",""],["창체·행특",318,788,"방법확장평가어수치",""],["창체·행특",346,844,"평가어수치",""]]],[2024,"사범대학 교육학과","C",792,[["창체·행특",250,612,"확장평가어",""],["사회",296,738,"동기방법확장평가어",""],["기타",226,552,"동기",""],["사회",302,740,"방법도서",""],["사회",265,663,"",""],["사회",272,678,"동기평가어수치",""],["사회",272,666,"방법평가어",""]]],[2024,"첨단융합학부","A",796,[["국어",276,680,"평가어",""],["기타",278,692,"도서평가어",""],["영어",352,864,"방법",""],["사회",354,886,"방법도서평가어",""],["과학",320,798,"동기평가어",""],["수학",248,610,"평가어수치",""],["국어",271,669,"동기평가어",""],["창체·행특",311,777,"동기평가어",""]]],[2024,"첨단융합학부","B",797,[["창체·행특",233,583,"",""],["사회",170,428,"방법평가어",""],["수학",286,720,"방법평가어",""],["수학",277,689,"방법평가어",""],["정보",411,1025,"방법도서평가어",""],["과학",304,758,"방법확장도서평가어",""],["사회",368,924,"방법",""],["수학",248,604,"평가어",""]]],[2024,"첨단융합학부","C",798,[["창체·행특",321,799,"평가어",""],["과학",226,562,"방법평가어",""],["과학",348,870,"방법확장평가어수치",""],["국어",410,1006,"방법평가어",""],["사회",448,1112,"확장도서평가어",""],["사회",414,1020,"방법수치",""],["수학",379,929,"동기평가어",""]]],[2023,"공과대학 건축학과","A",738,[["국어",360,878,"방법평가어",""],["과학",407,999,"방법평가어수치",""],["수학",212,520,"동기방법평가어",""],["예체능",306,750,"방법평가어",""],["과학",182,448,"확장도서수치",""],["과학",265,655,"동기방법",""],["사회",219,539,"도서",""]]],[2023,"공과대학 건축학과","B",739,[["창체·행특",411,1001,"도서평가어",""],["기타",204,514,"방법평가어",""],["영어",227,547,"수치",""],["수학",249,621,"방법",""],["창체·행특",542,1368,"동기방법확장평가어",""],["정보",316,794,"방법평가어",""]]],[2023,"공과대학 건축학과","C",740,[["사회",388,952,"방법평가어수치",""],["영어",285,709,"동기방법평가어",""],["정보",399,973,"방법확장도서평가어",""],["예체능",488,1210,"방법확장평가어수치",""],["국어",192,472,"",""],["기타",217,541,"",""],["수학",534,1292,"방법도서수치",""]]],[2023,"사회과학대학 심리학과","A",735,[["창체·행특",232,582,"",""],["국어",222,546,"동기평가어",""],["기타",204,510,"동기평가어",""],["국어",351,863,"동기",""],["국어",406,1006,"확장평가어수치",""],["사회",325,803,"방법수치",""],["사회",219,537,"방법확장",""]]],[2023,"사회과학대학 심리학과","B",736,[["창체·행특",251,613,"동기평가어",""],["사회",276,670,"평가어수치",""],["사회",215,527,"확장",""],["수학",267,659,"동기평가어",""],["사회",292,730,"방법",""],["영어",236,590,"평가어",""]]],[2023,"사회과학대학 심리학과","C",737,[["국어",176,434,"방법평가어",""],["기타",170,418,"도서",""],["기타",157,387,"방법",""],["영어",381,873,"동기방법확장평가어",""],["사회",311,747,"방법평가어수치",""],["국어",342,838,"방법평가어수치",""],["과학",300,742,"방법",""],["예체능",357,887,"방법평가어",""]]],[2023,"인문대학 역사학부","A",732,[["사회",349,865,"평가어수치",""],["국어",211,521,"방법평가어",""],["사회",270,668,"방법도서평가어수치",""],["사회",276,690,"방법",""],["사회",227,541,"동기확장도서수치",""],["사회",132,330,"평가어",""]]],[2023,"인문대학 역사학부","B",733,[["사회",355,883,"방법도서",""],["사회",462,1132,"방법확장평가어",""],["사회",365,907,"방법확장평가어",""],["사회",309,755,"방법평가어",""],["과학",266,660,"동기방법평가어",""],["사회",151,371,"",""]]],[2023,"인문대학 역사학부","C",734,[["과학",408,944,"평가어수치",""],["사회",275,691,"방법",""],["사회",441,1095,"방법확장평가어",""],["사회",228,566,"방법확장",""],["국어",327,755,"수치",""],["사회",413,1037,"방법확장평가어",""]]],[2022,"공과대학 화학생물공학부","A",707,[["사회",237,585,"평가어",""],["과학",320,812,"동기방법확장평가어",""],["국어",289,703,"방법",""],["수학",241,591,"방법",""],["사회",205,517,"방법평가어",""],["과학",239,549,"동기수치",""],["수학",245,601,"평가어",""]]],[2022,"공과대학 화학생물공학부","B",708,[["영어",142,352,"방법",""],["국어",145,351,"도서평가어",""],["과학",136,338,"평가어",""],["과학",156,388,"방법평가어",""],["수학",159,385,"방법평가어",""],["사회",149,361,"평가어",""],["과학",216,530,"방법",""],["창체·행특",201,487,"방법평가어수치",""],["창체·행특",265,651,"방법평가어",""]]],[2022,"공과대학 화학생물공학부","C",709,[["과학",383,933,"방법도서",""],["수학",254,638,"평가어",""],["과학",257,649,"",""],["과학",283,685,"방법도서",""],["과학",235,575,"방법",""],["과학",201,499,"방법평가어",""],["기타",246,608,"동기방법평가어",""]]],[2022,"사범대학 국어교육과","A",710,[["사회",167,421,"",""],["사회",265,649,"",""],["기타",160,390,"평가어",""],["영어",264,626,"방법평가어",""],["사회",222,556,"방법확장평가어",""],["수학",261,645,"평가어수치",""],["국어",191,471,"평가어",""],["국어",121,295,"평가어",""],["수학",182,448,"평가어",""]]],[2022,"사범대학 국어교육과","B",711,[["영어",216,534,"평가어",""],["창체·행특",305,707,"방법도서평가어",""],["기타",196,488,"동기방법",""],["수학",186,466,"방법",""],["창체·행특",189,461,"방법평가어",""],["국어",202,504,"동기확장",""],["창체·행특",268,664,"평가어",""]]],[2022,"사범대학 국어교육과","C",712,[["사회",150,366,"방법",""],["사회",218,534,"방법확장수치",""],["국어",164,404,"확장평가어수치",""],["영어",282,668,"방법도서평가어",""],["사회",296,678,"방법",""],["사회",134,334,"",""],["기타",151,377,"방법확장",""],["국어",215,535,"방법도서평가어",""],["창체·행특",258,640,"방법",""],["영어",181,443,"평가어",""]]],[2022,"약학대학 약학계열","A",713,[["영어",213,507,"평가어",""],["창체·행특",186,450,"방법",""],["국어",254,618,"방법도서평가어",""],["국어",204,504,"도서",""],["과학",200,506,"방법평가어",""],["과학",110,276,"",""],["과학",234,576,"방법도서",""],["창체·행특",211,523,"수치",""]]],[2022,"약학대학 약학계열","B",714,[["국어",219,533,"방법확장평가어",""],["영어",243,611,"방법",""],["과학",244,604,"동기방법확장",""],["과학",208,520,"방법평가어수치",""],["과학",248,616,"평가어",""],["창체·행특",215,535,"평가어",""]]],[2022,"약학대학 약학계열","C",715,[["과학",241,589,"방법도서평가어",""],["창체·행특",276,670,"동기방법도서평가어",""],["기타",269,653,"동기평가어",""],["영어",270,664,"평가어수치",""],["사회",225,539,"확장도서평가어",""],["사회",223,541,"동기평가어",""],["과학",255,623,"동기도서평가어수치",""],["창체·행특",241,583,"동기평가어",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","A",599,[["정보",207,485,"방법",""],["기타",174,440,"",""],["수학",182,460,"동기평가어",""],["기타",123,303,"방법",""],["과학",180,460,"방법평가어",""],["국어",198,488,"평가어수치",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","B",600,[["과학",84,206,"방법",""],["수학",157,389,"방법수치",""],["과학",221,555,"방법",""],["수학",105,263,"",""],["영어",97,247,"평가어",""],["과학",268,662,"동기방법평가어",""],["과학",245,605,"방법평가어",""],["과학",118,296,"방법",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","C",601,[["과학",137,343,"동기방법",""],["사회",430,1044,"동기방법도서",""],["수학",611,1473,"동기확장수치",""],["수학",173,433,"방법",""],["과학",200,498,"방법확장",""]]],[2021,"사범대학 영어교육과","A",602,[["국어",180,454,"평가어",""],["수학",284,710,"방법평가어",""],["영어",124,296,"방법평가어",""],["사회",416,1034,"동기방법",""],["영어",356,746,"",""],["수학",271,671,"",""]]],[2021,"사범대학 영어교육과","B",603,[["창체·행특",317,769,"확장평가어수치",""],["영어",594,1490,"방법확장",""],["기타",201,505,"평가어",""],["기타",284,680,"방법수치",""],["창체·행특",252,622,"방법수치",""],["국어",202,494,"방법",""],["예체능",555,1369,"방법수치",""]]],[2021,"사범대학 영어교육과","C",604,[["사회",240,600,"동기방법평가어",""],["영어",183,459,"동기방법평가어수치",""],["기타",188,466,"방법평가어",""],["국어",264,644,"방법평가어",""],["영어",262,646,"방법",""],["사회",396,938,"방법도서수치",""],["국어",159,395,"",""],["기타",267,675,"확장",""]]],[2021,"치의학대학원 치의학과","A",605,[["수학",190,458,"방법수치",""],["과학",78,200,"동기방법확장",""],["사회",331,779,"도서",""],["기타",385,933,"방법평가어수치",""],["과학",157,399,"",""],["창체·행특",155,385,"동기방법",""],["예체능",285,711,"동기",""],["기타",111,283,"평가어",""],["과학",249,607,"",""]]],[2021,"치의학대학원 치의학과","B",606,[["수학",174,436,"방법",""],["수학",272,664,"방법평가어수치",""],["과학",60,154,"확장",""],["기타",158,394,"방법",""],["기타",66,166,"동기",""],["창체·행특",190,476,"평가어",""],["과학",201,493,"방법평가어",""],["기타",182,446,"동기방법수치",""]]],[2021,"치의학대학원 치의학과","C",607,[["수학",221,557,"방법",""],["사회",253,629,"동기방법",""],["수학",249,613,"방법확장평가어수치",""],["수학",272,670,"방법수치",""],["과학",159,397,"방법확장수치",""],["사회",214,528,"동기방법",""],["과학",184,440,"방법수치",""],["기타",109,271,"수치",""]]],[2020,"공과대학 기계공학부","A",561,[["수학",135,341,"",""],["창체·행특",134,340,"방법",""],["사회",243,613,"방법확장평가어",""],["예체능",174,400,"수치",""],["과학",111,255,"방법수치",""],["정보",64,160,"평가어",""],["기타",156,384,"방법확장도서",""],["기타",94,236,"방법평가어",""],["과학",78,194,"방법",""]]],[2020,"공과대학 기계공학부","B",562,[["수학",134,344,"방법",""],["기타",91,211,"방법수치",""],["수학",341,843,"동기방법수치",""],["정보",524,1282,"방법평가어",""],["수학",255,613,"동기방법도서수치",""],["창체·행특",317,747,"동기확장",""],["정보",205,495,"방법수치",""]]],[2020,"공과대학 기계공학부","C",563,[["과학",324,810,"확장평가어",""],["과학",309,743,"방법수치",""],["수학",85,213,"",""],["과학",154,390,"동기방법평가어",""],["수학",85,215,"",""]]],[2020,"농업생명과학대학 농경제사회학부","A",564,[["국어",85,213,"평가어",""],["수학",114,284,"평가어",""],["수학",150,378,"방법",""],["수학",243,609,"동기방법평가어",""],["사회",148,374,"방법",""],["사회",166,398,"도서",""]]],[2020,"농업생명과학대학 농경제사회학부","B",565,[["국어",125,307,"방법",""],["영어",138,304,"방법",""],["사회",150,374,"방법평가어",""],["사회",343,841,"방법",""],["국어",238,600,"방법평가어",""],["사회",167,421,"방법확장평가어",""],["국어",184,446,"평가어수치",""],["사회",218,560,"",""]]],[2020,"농업생명과학대학 농경제사회학부","C",566,[["사회",225,571,"방법확장평가어",""],["수학",156,390,"방법확장",""],["기타",103,259,"동기방법수치",""],["기타",99,247,"방법",""],["국어",334,832,"방법",""],["사회",184,456,"방법확장",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","A",567,[["영어",127,327,"방법",""],["사회",293,735,"방법수치",""],["사회",206,512,"수치",""],["국어",180,408,"도서",""],["사회",209,531,"방법수치",""],["수학",69,179,"",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","B",568,[["창체·행특",164,404,"방법확장",""],["과학",237,595,"동기방법",""],["과학",141,359,"",""],["사회",327,813,"",""],["사회",166,422,"방법수치",""],["기타",277,687,"동기확장",""],["사회",250,626,"",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","C",569,[["기타",280,706,"도서",""],["기타",150,374,"",""],["국어",185,453,"방법도서수치",""],["사회",241,591,"확장평가어",""],["예체능",378,938,"방법확장평가어수치",""],["창체·행특",154,384,"방법",""]]],[2019,"공과대학 건설환경공학부","A",501,[["과학",147,369,"방법평가어",""],["기타",85,213,"방법",""],["과학",85,217,"방법",""],["영어",81,205,"",""],["수학",50,124,"도서",""],["과학",73,183,"평가어",""],["과학",113,285,"방법",""],["기타",83,205,"",""]]],[2019,"공과대학 건설환경공학부","B",502,[["과학",104,262,"평가어",""],["수학",190,478,"방법확장",""],["과학",107,267,"방법수치",""],["사회",255,629,"평가어수치",""],["과학",213,523,"방법수치",""]]],[2019,"공과대학 건설환경공학부","C",503,[["영어",126,314,"",""],["수학",96,242,"방법",""],["과학",155,389,"",""],["수학",178,450,"동기",""],["수학",197,493,"방법평가어수치",""],["수학",123,311,"",""],["수학",154,372,"수치",""]]],[2019,"농업생명과학대학 응용생물화학부","A",504,[["국어",185,447,"방법",""],["창체·행특",74,184,"평가어",""],["과학",133,325,"수치",""],["과학",104,264,"방법",""],["창체·행특",181,453,"평가어",""],["수학",73,185,"",""],["수학",145,365,"방법수치",""],["기타",146,370,"평가어",""],["과학",89,227,"방법",""],["창체·행특",139,355,"방법",""],["과학",200,500,"방법평가어",""],["수학",132,330,"동기방법수치",""],["기타",174,428,"방법수치",""],["과학",208,526,"방법",""],["수학",333,829,"방법평가어",""],["과학",178,444,"동기방법평가어",""]]],[2019,"농업생명과학대학 응용생물화학부","B",505,[["과학",247,613,"동기방법확장평가어수치",""],["과학",126,316,"도서",""],["과학",143,357,"방법평가어",""],["과학",177,445,"방법",""],["수학",225,563,"",""],["과학",117,285,"방법평가어",""],["과학",319,785,"동기방법확장평가어수치",""],["국어",159,397,"도서평가어",""],["수학",271,687,"방법확장",""],["과학",162,394,"방법",""]]],[2019,"농업생명과학대학 응용생물화학부","C",506,[["과학",246,732,"확장평가어",""],["과학",237,671,"방법수치",""],["수학",65,193,"",""],["과학",121,357,"동기방법평가어",""],["수학",68,198,"",""]]],[2019,"인문대학 국어국문학과","A",498,[["국어",148,384,"방법평가어",""],["국어",141,353,"방법",""],["수학",235,595,"방법도서수치",""],["영어",234,572,"평가어수치",""],["사회",139,345,"방법확장",""],["창체·행특",254,620,"방법확장수치",""],["수학",118,292,"수치",""],["창체·행특",228,578,"확장평가어",""],["기타",161,397,"동기평가어",""],["국어",201,463,"방법",""]]],[2019,"인문대학 국어국문학과","B",499,[["수학",214,530,"방법수치",""],["국어",66,168,"",""],["국어",108,268,"",""],["수학",157,385,"",""],["국어",309,779,"방법",""],["수학",261,647,"방법평가어",""],["국어",175,435,"방법확장도서수치",""],["수학",330,818,"방법평가어",""],["영어",249,619,"방법",""],["기타",215,529,"방법평가어",""],["기타",236,576,"방법확장평가어",""],["국어",180,448,"동기평가어수치",""]]],[2019,"인문대학 국어국문학과","C",500,[["국어",178,426,"방법도서평가어",""],["수학",213,521,"평가어",""],["창체·행특",149,365,"방법",""],["국어",269,663,"도서",""],["사회",247,605,"도서",""],["과학",179,457,"확장평가어",""],["창체·행특",155,387,"확장도서평가어",""],["영어",270,588,"방법도서",""],["기타",227,563,"확장",""],["사회",305,759,"도서수치",""],["국어",267,649,"",""]]]];
+
+const YEARS=[2019,2020,2021,2022,2023,2024,2025,2026];
+const TREND={judge:[39,27,32,63,59,80,82,5],extend:[18,22,18,14,25,29,24,51],book:[12,7,3,17,12,14,21,33]};
+const ENDS={"2024-25":[["학생임",44],["보임",27],["발표함",27],["함",19],["설명함",17],["보여줌",16],["있음",15],["탐구함",15]],"2026":[["탐구함",43],["분석함",28],["작성함",27],["제시함",26],["발표함",23],["조사함",16],["참여함",16],["살펴봄",15]]};
+const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아가",8],["이를 바탕으로",7],["이후",7]],"2026":[["추가로",21],["이후",20],["또한",15],["이어",10],["특히",5],["이를 토대로",4]]};
+
+const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
+
+/* ---------- 기재 영역 (요령 p.208) ---------- */
+const MODES={
+  subj:{name:"과목별 세부능력 및 특기사항",max:1500},
+  auto:{name:"자율·자치활동 특기사항",max:1500},
+  club:{name:"동아리활동 특기사항",max:1500},
+  career:{name:"진로활동 특기사항",max:1500},
+  beh:{name:"행동특성 및 종합의견",max:900}
+};
+let MODE="subj";
+const LIM=()=>MODES[MODE].max;
+const isCA=()=>MODE==="auto"||MODE==="club"||MODE==="career";
+/* ---------- 규칙 ---------- */
+const R=[
+ {id:"A1",sev:"err",name:"공인어학시험",src:"요령 p.18 3-가",re:/TOEIC|TOEFL|TEPS|HSK|JLPT|JPT|DELF|DALF|TESTDAF|TORFL|DELE|토익|토플|텝스|한자능력검정|상공회의소\s?한자|실용한자|한자급수|상무한검|한자자격검정/gi},
+ {id:"A2",sev:"warn",name:"대회·수상 실적",src:"요령 p.18 3-나, p.118",re:/대회|입상|수상(?!\s?스키)|[금은동]상|장려상|최우수상|우수상/g},
+ {id:"A3",sev:"err",name:"교외상",src:"요령 p.18 3-다",re:/표창장|감사장|공로상/g},
+ {id:"A4",sev:"warn",name:"인증시험",src:"요령 p.18 3-라",re:/인증\s?시험|인증서|급수\s?시험/g},
+ {id:"A5",sev:"err",name:"모의고사·학력평가 성적",src:"요령 p.18 3-마",re:/모의고사|모의평가|학력평가|전국연합|백분위|표준점수/g},
+ {id:"A6",sev:"warn",name:"논문 투고·출간·지식재산권",src:"요령 p.18 3-바·사·아",re:/학회|학술지|투고|등재|출간|출판|특허|실용신안|상표\s?등록|출원/g},
+ {id:"A7",sev:"warn",name:"해외 활동실적",src:"요령 p.18 3-자",re:/해외\s?(?:봉사|연수|활동|탐방|캠프)|어학연수|교환학생/g},
+ {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시",src:"요령 p.18 3-차",re:/부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모부?|고모부?/g},
+ {id:"A9",sev:"err",name:"장학생·장학금",src:"요령 p.18 3-카",re:/장학/g},
+ {id:"A10",sev:"warn",name:"대학명·기관명·상호명·강사명",src:"요령 p.19 3-타",re:/[가-힣]{1,12}대학교|대학원|교수님?|강사|주식회사|㈜|[가-힣]{2,10}(?:재단|협회|연구소)/g},
+ {id:"A11",sev:"warn",name:"자격증 명칭·취득",src:"요령 p.19 3-파",re:/자격증|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b/g},
+ {id:"A13",sev:"err",modes:["subj","beh"],name:()=>MODE==="beh"?"방과후학교 활동":"MOOC·방과후학교",src:()=>MODE==="beh"?"요령 p.159 나":"요령 p.118 바-3)·4)",re:/K-?MOOC|MOOC|KOCW|방과\s?후/gi},
+ {id:"A14",sev:"warn",name:()=>isCA()?"자율탐구 산출물(소논문) 실적":"연구보고서(소논문)",src:()=>MODE==="subj"?"요령 p.118 바-5)":MODE==="beh"?"요령 p.159 나":"요령 p.82 바, p.209",re:/소논문|연구\s?보고서|논문/g}
+];
+const OKEN=new Set("CEO PD UCC IT POP CF TV PAPS SNS PPT AI km kg cm mm ml kWh Hz".split(" "));
+const JUDGE=/탁월|우수|뛰어나|뛰어난|돋보|인상적|훌륭|남다른|성실|적극적|역량이|능력이|능력을|자질|학생임|학생으로/;
+const ACT=/탐구|분석|조사|발표|작성|제시|설명|계산|비교|제작|설계|실험|측정|토론|정리|해결|풀이|구성|제안|검토|표현|비평|해석|증명|기획|운영/;
+const CONNS=["이후","이어","이를 바탕으로","이를 토대로","나아가","추가로","또한","특히","이를 통해","그 결과","이 과정에서"];
+
+function byteOf(t){let b=0,m=0,s=0;for(const ch of t){if(ch.codePointAt(0)>127){b+=3;m++}else{b+=1;s++}}return{b,m,s,n:m+s}}
+function sentences(t){const out=[];const re=/[^\n.]*[^\n.\s][^\n.]*(?:\.+|(?=\n)|$)/g;let x;while((x=re.exec(t))){if(!x[0].trim()){re.lastIndex++;continue}const lead=x[0].length-x[0].trimStart().length;out.push({s:x[0].trim(),start:x.index+lead,end:x.index+x[0].length})}return out}
+function endWord(s){const w=s.replace(/[.\s"'”’)\]]+$/,"").split(/\s+/);return w[w.length-1]||""}
+
+/* ---------- 기관명·상호명 사전 (요령 p.19 3-타) ----------
+   교육관련기관(교육부, 교육청, 교육지원청, 교육부 소속기관)은 기재 가능하므로 넣지 않음 (요령 p.19 각주1).
+   일반 단어와 겹쳐 오탐이 큰 이름(아마존, 기아, 현대, 토스, 당근, 메타, 효성)은 넣지 않음. */
+const ORG_GOV="대통령실 국무조정실 국무총리비서실 기획재정부 재정경제부 기획예산처 과학기술정보통신부 외교부 통일부 법무부 국방부 행정안전부 국가보훈부 문화체육관광부 농림축산식품부 산업통상자원부 산업통상부 보건복지부 환경부 기후에너지환경부 고용노동부 여성가족부 성평등가족부 국토교통부 해양수산부 중소벤처기업부 인사혁신처 법제처 식품의약품안전처 국가데이터처 통계청 지식재산처 특허청 기상청 산림청 경찰청 소방청 해양경찰청 관세청 국세청 조달청 병무청 방위사업청 질병관리청 질병관리본부 문화재청 국가유산청 농촌진흥청 우주항공청 재외동포청 검찰청 대검찰청 공정거래위원회 금융위원회 금융감독원 국민권익위원회 개인정보보호위원회 원자력안전위원회 방송통신위원회 방송미디어통신위원회 국가인권위원회 감사원 국가정보원 한국은행 한국전력 한전 한국수자원공사 한국토지주택공사 국민건강보험공단 국민연금공단 한국철도공사 코레일 한국도로공사 한국가스공사 한국관광공사 한국개발연구원 한국과학기술연구원 한국과학기술정보연구원 한국교육과정평가원 한국교육개발원 한국직업능력연구원 한국환경연구원 국립과학수사연구원 한국천문연구원 한국항공우주연구원 한국원자력연구원 국립중앙박물관 국립중앙도서관 국립현대미술관 국립생태원 국립공원공단 서울시청 경기도청".split(" ");
+const ORG_CO="삼성 삼성전자 삼성바이오로직스 삼성SDI 하이닉스 SK하이닉스 SK텔레콤 SK이노베이션 LG전자 LG화학 LG에너지솔루션 LG유플러스 현대자동차 현대차 HD현대 현대건설 현대백화점 현대중공업 기아자동차 기아차 포스코 롯데 한화 두산 CJ제일제당 셀트리온 한미약품 대한항공 아시아나 네이버 카카오 카카오톡 쿠팡 배달의민족 우아한형제들 하이브 신한은행 국민은행 하나은행 우리은행 농협 이마트 무신사 올리브영 다이소 크래프톤 넥슨 엔씨소프트 넷마블 애플 구글 유튜브 인스타그램 페이스북 넷플릭스 틱톡 챗GPT 오픈AI 엔비디아 테슬라 마이크로소프트 아마존닷컴 디즈니 나이키 아디다스 코카콜라 맥도날드 스타벅스 인텔 퀄컴 화웨이 샤오미 알리바바 텐센트 바이두 소니 도요타 토요타 폭스바겐 벤츠 에어비앤비 우버 스페이스X".split(" ");
+const ORG_CO_EN="Samsung SK LG KT SKT KB CJ GS POSCO Hyundai Apple Google YouTube Instagram Facebook Netflix TikTok ChatGPT OpenAI NVIDIA Tesla Microsoft Disney Nike Adidas Starbucks Intel Qualcomm Huawei Xiaomi Alibaba Tencent Baidu Sony Toyota BMW TSMC ASML IBM Airbnb Uber SpaceX Naver Kakao Coupang".split(" ");
+const ORG_INT="국제연합 유엔 유네스코 유니세프 세계보건기구 국제통화기금 세계은행 세계무역기구 세계지식재산기구 석유수출국기구 유럽연합 아세안 나토 국경없는의사회 그린피스 국제앰네스티 유엔난민기구 국제적십자 UN UNESCO UNICEF WHO IMF OECD WTO WIPO OPEC EU ASEAN APEC NATO NASA IPCC UNHCR".split(" ");
+const escRe=x=>x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+const altRe=list=>list.slice().sort((a,b)=>b.length-a.length).map(escRe).join("|");
+const RE_GOV=new RegExp(altRe(ORG_GOV),"g");
+const RE_CO=new RegExp(altRe(ORG_CO),"g");
+const RE_CO_EN=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_CO_EN)+")(?![A-Za-z])","g");
+const RE_INT=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_INT)+")(?![A-Za-z])","g");
+const RE_HQ=/[가-힣A-Za-z0-9]{2,15}\s?(?:본사|지사|사옥)/g;
+const RE_KR_PUB=/한국[가-힣]{2,10}(?:공사|공단|연구원|진흥원|센터|협회|재단)/g;
+function userOrgs(){return el.orgs.value.split(/[,，]/).map(v=>v.trim()).filter(Boolean)}
+function scanOrgs(t,add){
+  const spans=[];
+  const put=(a,b,sev,name,h)=>{if(spans.some(([s,e])=>a<e&&b>s))return;spans.push([a,b]);add({id:"A10",sev,name,src:"요령 p.19 3-타"},a,b,h)};
+  const hit=(re,sev,name)=>{re.lastIndex=0;let x;while((x=re.exec(t)))put(x.index,x.index+x[0].length,sev,name,x[0].trim())};
+  for(const w of userOrgs()){let i=0;while((i=t.indexOf(w,i))>-1){put(i,i+w.length,"warn","기관·상호명 (직접 추가)",w);i+=w.length}}
+  hit(RE_HQ,"warn","상호명 (본사·지사·사옥)");
+  hit(RE_GOV,"warn","기관명 (교육관련기관 외)");
+  hit(RE_KR_PUB,"warn","기관명 (공공기관)");
+  hit(RE_CO,"warn","상호명 (기업·브랜드·플랫폼)");
+  hit(RE_CO_EN,"warn","상호명 (기업·브랜드·플랫폼)");
+  hit(RE_INT,"info","국제기구명 (학습 내용이면 문맥 판단)");
+  return spans;
+}
+
+function blockedWords(){return el.blocked.value.split(/[,，]/).map(v=>v.trim()).filter(Boolean)}
+
+function scan(t){
+  const F=[];
+  const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit});
+  for(const r0 of R){if(r0.modes&&!r0.modes.includes(MODE))continue;
+    const r={...r0,name:typeof r0.name==="function"?r0.name():r0.name,src:typeof r0.src==="function"?r0.src():r0.src};
+    r0.re.lastIndex=0;let x;while((x=r0.re.exec(t))){add(r,x.index,x.index+x[0].length,x[0]);if(!x[0].length)r0.re.lastIndex++}}
+  const orgSpans=[];scanOrgs(t,(r,a,b,h)=>{add(r,a,b,h);orgSpans.push([a,b])});
+  for(const w of blockedWords()){let i=0;while((i=t.indexOf(w,i))>-1){add({id:"A12",sev:"err",name:"재학 고교를 알 수 있는 내용",src:"요령 p.19 4"},i,i+w.length,w);i+=w.length}}
+  {const re=/〔[^〕\n]*〕/g;let y;while((y=re.exec(t)))F.push({id:"T1",sev:"err",name:"패턴 틀 빈칸이 남아 있음 (함닷 점검, 규정 아님)",src:"—",start:y.index,end:y.index+y[0].length,hit:y[0]})}
+  const bc=byteOf(t).b;
+  if(bc>LIM())F.push({id:"A16",sev:"err",name:`글자 수 초과 (${LIM()/3}자 = ${LIM().toLocaleString()}Byte)`,src:"요령 p.208",start:-1,end:-1,hit:bc.toLocaleString()+" Byte"});
+  for(const se of sentences(t)){
+    const core=se.s.replace(/[.\s"'”’)\]]+$/,"");const last=core.slice(-1);const code=last.charCodeAt(0);
+    const tailS=se.start+core.length-Math.min(3,core.length),tailE=se.start+core.length;
+    if(/[다요까]$/.test(core))F.push({id:"B1",sev:"warn",name:"명사형 어미로 끝나지 않음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
+    else if(code>=0xAC00&&code<=0xD7A3&&(code-0xAC00)%28!==16)F.push({id:"B1",sev:"info",name:"명사형 어미(-ㅁ/-음)가 아닌 끝맺음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
+    if(MODE!=="beh"&&JUDGE.test(se.s)&&!ACT.test(se.s))F.push({id:"B6",sev:"info",name:"근거 행동 없이 평가어만 있는 문장",src:"요령 p.19 5-가",start:se.start,end:se.start+core.length,hit:core.length>22?core.slice(0,22)+"…":core});
+  }
+  let x;const sp=/[^가-힣ㄱ-ㆎA-Za-z0-9\s.,()'"\-?!:;\/~〔〕]|%/g;
+  while((x=sp.exec(t)))F.push({id:"B2",sev:"info",name:"특수문자",src:"요령 p.30",start:x.index,end:x.index+x[0].length,hit:x[0]});
+  const num=/^[ \t]*(?:\d+[.)]|[①-⑳]|[-•*])\s/gm;
+  while((x=num.exec(t)))F.push({id:"B2",sev:"info",name:"문단 구분 기호(번호)",src:"요령 p.30",start:x.index,end:x.index+x[0].length,hit:x[0].trim()});
+  const en=/[A-Za-z][A-Za-z+\-]*[A-Za-z+]/g;
+  while((x=en.exec(t))){if(!OKEN.has(x[0])&&!orgSpans.some(([a,b])=>x.index>=a&&x.index<b))F.push({id:"B3",sev:"info",name:"영문 표기 (허용 범위 확인)",src:"요령 p.28 ③",start:x.index,end:x.index+x[0].length,hit:x[0]})}
+  const bk=/[“"‘'『「<][^”"’'』」>\n]{1,60}[”"’'』」>]\s*\([가-힣A-Za-z][^)]{0,25}\)/g;
+  while(MODE!=="beh"&&(x=bk.exec(t)))F.push({id:"B9",sev:"info",name:"도서 언급: 독후활동 외 교육활동이 있었는지 확인",src:"요령 p.157 다, 길잡이 p.153",start:x.index,end:x.index+x[0].length,hit:x[0].length>24?x[0].slice(0,24)+"…":x[0]});
+  return F;
+}
+
+/* ---------- 화면 ---------- */
+const $=id=>document.getElementById(id);
+const el={src:$("src"),bd:$("backdrop"),blocked:$("blocked"),orgs:$("orgs"),find:$("findings"),tally:$("tally"),stage:$("stage")};
+const SEV={err:"오류",warn:"확인",info:"참고"};
+const ORDER={err:0,warn:1,sp:1.5,info:2};
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+function paintBackdrop(t,F,S){
+  const spans=F.filter(f=>f.start>=0).concat((S||[]).map(x=>({...x,sev:"sp"}))).sort((a,b)=>a.start-b.start||ORDER[a.sev]-ORDER[b.sev]);
+  let out="",pos=0;
+  for(const f of spans){if(f.start<pos)continue;out+=esc(t.slice(pos,f.start))+'<mark class="'+f.sev+'">'+esc(t.slice(f.start,f.end))+"</mark>";pos=f.end}
+  out+=esc(t.slice(pos))+"\n ";
+  el.bd.innerHTML=out;el.bd.scrollTop=el.src.scrollTop;
+}
+function renderFindings(F){
+  const groups=new Map();
+  for(const f of F){const k=f.id+"|"+f.name+"|"+f.hit;if(!groups.has(k))groups.set(k,{...f,count:0});groups.get(k).count++}
+  const rows=[...groups.values()].sort((a,b)=>ORDER[a.sev]-ORDER[b.sev]||a.id.localeCompare(b.id,undefined,{numeric:true}));
+  const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
+  el.tally.innerHTML=(F.length?["err","warn","info"].filter(k=>c[k]).map(k=>`<span class="pill ${k}">${SEV[k]} ${c[k]}</span>`).join(""):'<span class="pill ok">걸린 항목 없음</span>');
+  if(!rows.length){el.find.innerHTML='<div class="empty-note">자동 판정 항목에서 걸린 것이 없습니다. 관찰 근거, 성취기준 연계, 과장 여부(요령 p.19, p.95)는 직접 확인하세요.</div>';return}
+  el.find.innerHTML='<table><thead><tr><th>구분</th><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>'+rows.map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="pill ${r.sev}">${SEV[r.sev]}</span></td><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}</td><td class="src">${esc(r.src)}</td></tr>`).join("")+"</tbody></table>";
+}
+function renderMeter(t){
+  const {b,m,s,n}=byteOf(t);
+  const L=LIM();
+  $("bytes").innerHTML=b.toLocaleString()+' <small>/ '+L.toLocaleString()+' Byte</small>';
+  $("bytes").classList.toggle("over",b>L);
+  $("chars").textContent=n.toLocaleString();$("multi").textContent=m.toLocaleString();$("single").textContent=s.toLocaleString();
+  $("remain").innerHTML=b>L?'<b style="color:var(--err)">'+(b-L).toLocaleString()+"</b> Byte 초과":"남은 <b>"+(L-b).toLocaleString()+"</b> Byte";
+  const fill=$("fill");fill.style.width=Math.min(100,b/L*100)+"%";fill.classList.toggle("over",b>L);
+  const g=parseInt($("goal").value,10);let gm=$("bar").querySelector(".goal");
+  if(g>0&&g<=L){if(!gm){gm=document.createElement("span");gm.className="goal";$("bar").appendChild(gm)}gm.style.left=(g/L*100)+"%";gm.title="목표 "+g+" Byte"}else if(gm)gm.remove();
+}
+function update(){
+  const t=el.src.value;const F=scan(t);const S=spellFindings(t);
+  paintBackdrop(t,F,S);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t,S);
+  if(CLS&&cur>=0){CLS.students[cur].text=t;saveDrafts();renderRoster();if(view==="all")renderClassView()}
+  else store.set("setuk-draft",t);
+}
+el.src.addEventListener("input",update);
+el.src.addEventListener("scroll",()=>{el.bd.scrollTop=el.src.scrollTop});
+el.blocked.addEventListener("input",()=>{store.set("setuk-blocked",el.blocked.value);update()});
+el.orgs.addEventListener("input",()=>{store.set("setuk-orgs",el.orgs.value);update()});
+$("goal").addEventListener("input",()=>{store.set("setuk-goal",$("goal").value);renderMeter(el.src.value)});
+el.find.addEventListener("click",e=>{const tr=e.target.closest("tr.row");if(!tr)return;const s=+tr.dataset.s,en=+tr.dataset.e;if(s<0)return;el.src.focus();el.src.setSelectionRange(s,en)});
+$("clearBtn").addEventListener("click",()=>{el.src.value="";if(!CLS)$("edSub").textContent="세특 문장을 붙여 넣으세요.";update();el.src.focus()});
+$("sampleBtn").addEventListener("click",()=>{el.src.value=SAMPLE;$("edSub").textContent="예시 문장이 들어 있습니다. 지우고 붙여 넣으세요.";update()});
+
+/* ---------- 패널 전환 ---------- */
+function setMode(){
+  const L=$("btnL").getAttribute("aria-pressed")==="true",Rr=$("btnR").getAttribute("aria-pressed")==="true";
+  $("casesPanel").hidden=!L;$("patPanel").hidden=!Rr;
+  el.stage.className="stage"+(L&&Rr?" lr":L?" l":Rr?" r":"");
+  store.set("setuk-mode",(L?"L":"")+(Rr?"R":""));
+}
+["btnL","btnR"].forEach(id=>$(id).addEventListener("click",()=>{const b=$(id);b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true");setMode()}));
+
+/* ---------- 사례집 ---------- */
+const FLAT=[];IDX.forEach(([y,d,s,id,ps])=>ps.forEach((p,i)=>FLAT.push({y,d,s,id,no:i+1,subj:p[0],len:p[1],b:p[2],tags:p[3],flow:p[4]})));
+const SUBJS=["국어","영어","수학","사회","과학","정보","예체능","창체·행특","기타"];
+$("fSubj").innerHTML='<option value="">교과 전체</option>'+SUBJS.map(v=>`<option>${v}</option>`).join("");
+$("fYear").innerHTML='<option value="">학년도 전체</option>'+YEARS.slice().reverse().map(v=>`<option value="${v}">${v}학년도</option>`).join("");
+let shown=60;
+const TAGS=["동기","방법","확장","도서","평가어","수치"];
+function caseList(){
+  const fs=$("fSubj").value,fy=$("fYear").value,ft=$("fTag").value;
+  return FLAT.filter(c=>(!fs||c.subj===fs)&&(!fy||c.y==fy)&&(!ft||(ft[0]==="!"?!c.tags.includes(ft.slice(1)):c.tags.includes(ft))));
+}
+function renderCases(){
+  const list=caseList();
+  $("caseCount").textContent=list.length+"문단";
+  $("cases").innerHTML=list.slice(0,shown).map(c=>{
+    const tags=TAGS.filter(t=>c.tags.includes(t)).map(t=>`<span class="chip${t==="평가어"?" judge":""}">${t}</span>`).join("");
+    const flow=c.flow?c.flow.split(">").map(esc).join('<span class="arr">→</span>'):"";
+    return `<article class="case"><div class="case-top"><strong>${c.y} · ${esc(c.d)} ${c.s}</strong><span class="meta">문단 ${c.no} · ${c.len}자 · ${c.b.toLocaleString()}B</span><a href="${AR}${c.id}" target="_blank" rel="noopener">원문 ↗</a></div><div class="chips"><span class="chip subj">${c.subj}</span>${tags}</div>${flow?`<div class="flow">${flow}</div>`:""}</article>`}).join("")||'<p class="note">조건에 맞는 문단이 없습니다.</p>';
+  $("moreBtn").hidden=list.length<=shown;
+}
+["fSubj","fYear","fTag"].forEach(id=>$(id).addEventListener("change",()=>{shown=60;renderCases()}));
+$("moreBtn").addEventListener("click",()=>{shown+=60;renderCases()});
+
+/* ---------- 패턴 ---------- */
+function chart(){
+  const W=320,H=150,pl=26,pr=8,pt=8,pb=20,iw=W-pl-pr,ih=H-pt-pb;
+  const x=i=>pl+i*iw/(YEARS.length-1),y=v=>pt+ih-v/100*ih;
+  let g="";[0,25,50,75,100].forEach(v=>{g+=`<line class="grid" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl-4}" y="${y(v)+3}" text-anchor="end">${v}</text>`});
+  YEARS.forEach((yr,i)=>{g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${String(yr).slice(2)}</text>`});
+  const S=[["judge","var(--c1)"],["extend","var(--c2)"],["book","var(--c3)"]];
+  for(const [k,c] of S){const pts=TREND[k].map((v,i)=>x(i)+","+y(v)).join(" ");g+=`<polyline points="${pts}" fill="none" style="stroke:${c}" stroke-width="2" stroke-linejoin="round"/>`;const lv=TREND[k][7];g+=`<circle cx="${x(7)}" cy="${y(lv)}" r="3" style="fill:${c}"/>`}
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="연도별 평가어, 확장 연결어, 도서 표기 포함 문단 비율">${g}</svg>`;
+}
+function rank(arr,alt){const max=arr[0][1];return `<ul class="rank${alt?" alt":""}">`+arr.map(([w,n])=>`<li><span class="w">${w}</span><span class="b" style="width:${Math.round(n/max*60)}%"></span><span class="n">${n}</span></li>`).join("")+"</ul>"}
+$("patBody").innerHTML=`
+<div class="sec"><h4>지금 입력한 글</h4><div id="diag"></div></div>
+<div class="sec"><h4>연도별 변화 (문단 중 해당 요소가 있는 비율, 퍼센트)</h4>
+${chart()}
+<div class="legend"><span><i style="background:var(--c1)"></i>평가어 (2025 82 → 2026 5)</span><span><i style="background:var(--c2)"></i>확장 연결어 (24 → 51)</span><span><i style="background:var(--c3)"></i>도서(저자) 표기 (21 → 33)</span></div>
+<p>2019~2026학년도 학생부 발췌 574문단. 평가어는 탁월·우수·돋보임·~학생임 등, 확장 연결어는 이후·이어·추가로·나아가 등.</p></div>
+<div class="sec"><h4>문장 끝 서술어</h4><div class="cols"><div><div class="colh">2024~25 (136문단)</div>${rank(ENDS["2024-25"],true)}</div><div><div class="colh">2026 (99문단)</div>${rank(ENDS["2026"])}</div></div>
+<p>2024~25는 '~학생임'으로 맺는 총평이 가장 많고, 2026은 탐구함·분석함·제시함 같은 행동 서술어가 차지합니다.</p></div>
+<div class="sec"><h4>문단을 잇는 연결어 (포함 문단 수)</h4><div class="cols"><div><div class="colh">2024~25</div>${rank(CONN["2024-25"],true)}</div><div><div class="colh">2026</div>${rank(CONN["2026"])}</div></div></div>
+<div class="sec"><h4>권장 구성</h4>
+<ol class="steps"><li><b>계기</b> 수업 중 생긴 질문이나 관심 (관심을 갖고, 궁금증을)</li><li><b>방법</b> 자료·도구·절차 (비교하여, 측정하고, 설문을 실시하여)</li><li><b>결과</b> 정리하거나 제시한 내용 (정리함, 제시함)</li><li><b>확장</b> 후속 읽기·조사·적용 (이후, 이어, 추가로)</li></ol>
+<p>공식 예시 자료는 성취수준, 평가 과제에서 관찰한 수행 과정·결과, 역량, 교사 총평의 네 요소로 세특을 구성합니다(교과세특 예시 자료 일러두기). 평가어를 쓸 때는 근거 행동 뒤에 둡니다(요령 p.19 5-가).</p>
+<p class="cite">길이 참고: 공식 예시 고등 사회 302~399자(예시 자료 p.160~169), 아로리 발췌 문단 평균 약 300자, 과목 상한 500자(요령 p.208).</p></div>
+<div class="sec"><h4>해석할 때 주의</h4><p>2026 발췌는 학생 9명 모두 정확히 11문단이고 길이와 따옴표 표기가 고르게 맞춰져 있어, 웹진이 문단을 고르고 정리한 결과일 가능성이 있습니다. 학교 현장 전체의 경향으로 단정하지 마세요.</p></div>
+<p class="cite">글꼴: Pretendard 1.3.9 © Kil Hyung-jin, SIL Open Font License 1.1 (<a href="fonts/LICENSE-Pretendard.txt" target="_blank" rel="noopener">라이선스 전문</a>) · <a href="licenses.html">출처와 라이선스</a></p>`;
+
+function renderDiag(t){
+  const box=$("diag");if(!box)return;
+  const ss=sentences(t);
+  if(!ss.length){box.innerHTML='<p>입력란에 세특을 넣으면 문장 수, 연결어, 평가어 비율을 2026 발췌와 비교해 보여줍니다.</p>';return}
+  const n=ss.length,avg=Math.round(ss.reduce((a,s)=>a+s.s.length,0)/n);
+  const conn=CONNS.filter(c=>t.includes(c));
+  const act=ss.filter(s=>ACT.test(s.s)).length,jud=ss.filter(s=>JUDGE.test(s.s)).length;
+  const flow=ss.map(s=>esc(endWord(s.s))).join('<span class="arr" style="color:var(--muted);padding:0 3px">→</span>');
+  box.innerHTML=`<dl class="diag">
+<div><dt>문장 수</dt><dd>${n}</dd></div>
+<div><dt>평균 문장 길이</dt><dd>${avg}<small>자</small></dd></div>
+<div><dt>행동 서술 문장</dt><dd>${act}/${n}</dd></div>
+<div><dt>평가어 문장</dt><dd>${jud}/${n}</dd></div>
+<div><dt>확장·연결어</dt><dd>${conn.length}<small> ${conn.length?esc(conn.join(", ")):"없음"}</small></dd></div>
+</dl><p class="myflow">흐름: ${flow}</p>
+<p>2026 발췌 문단은 평균 약 4문장, 확장 연결어 포함 51퍼센트, 방법 서술 포함 86퍼센트, 평가어 포함 5퍼센트입니다.</p>`;
+}
+
+
+
+/* ---------- 맞춤법: Claude 검사(sample) + 외부 검사기 연결 ---------- */
+const SP={};let spCtl=null;
+const slot=i=>(CLS&&(i!=null?i:cur)>=0)?"s"+(i!=null?i:cur):"solo";
+function spellFindings(t,i){const out=[];for(const x of SP[slot(i)]||[]){const k=t.indexOf(x.wrong);if(k>=0)out.push({...x,start:k,end:k+x.wrong.length})}return out}
+function spellCount(i){return CLS?spellFindings(CLS.students[i].text,i).length:0}
+const spStatus=m=>{$("spStatus").textContent=m};
+function spBusy(on){$("spOne").disabled=on;$("spAll").disabled=on;$("spStop").hidden=!on}
+async function getSample(){try{return window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(_){return null}}
+const RULES=`당신은 한국어 어문 규범(한글 맞춤법, 표준어 규정, 외래어 표기법, 띄어쓰기) 교정자입니다. 아래는 고등학교 학교생활기록부 '세부능력 및 특기사항' 문장입니다.
+규칙:
+- 맞춤법, 띄어쓰기, 표준어, 외래어 표기, 문법(조사, 호응) 오류만 찾는다. 문체, 내용, 어휘 선택, 문장 길이는 고치지 않는다.
+- 문장을 '-함.', '-음.', '-임.'처럼 명사형으로 끝맺는 것은 학교생활기록부 기재 방식이므로 오류가 아니다.
+- 규범상 두 가지가 모두 허용되는 띄어쓰기(보조 용언 등)는 지적하지 않는다.
+- 확실한 오류만 보고한다. 없으면 빈 배열로 답한다.
+- wrong은 원문에 있는 그대로의 연속 문자열로, 원문에서 한 번만 나오도록 앞뒤 어절을 포함해 20자 이내로 잡는다. right는 wrong을 대신할 문자열이다.
+- type은 "맞춤법","띄어쓰기","표준어","외래어","문법" 중 하나. why는 30자 이내 설명. rule은 근거 조항(예: "한글 맞춤법 제42항")을 확실히 알 때만 쓰고, 아니면 "".`;
+const promptOne=t=>RULES+`
+JSON만 답한다. 형식: {"items":[{"wrong":"할수 있음","right":"할 수 있음","type":"띄어쓰기","why":"의존 명사는 띄어 씀","rule":"한글 맞춤법 제42항"}]}
+
+[문장]
+<<<
+${t}
+>>>`;
+const promptMany=list=>RULES+`
+학생별로 따로 검사한다. JSON만 답한다. 형식: {"students":[{"no":1,"items":[{"wrong":"...","right":"...","type":"...","why":"...","rule":""}]}]}
+`+list.map(o=>`
+### 학생 ${o.st.no}
+<<<
+${o.st.text}
+>>>`).join("\n");
+function cleanItems(items,text){
+  if(!Array.isArray(items))return [];
+  const S=x=>typeof x==="string"?x:"";
+  return items.filter(x=>x&&S(x.wrong)&&typeof x.right==="string"&&x.wrong!==x.right&&text.includes(x.wrong))
+    .map(x=>({wrong:S(x.wrong),right:x.right,type:S(x.type).slice(0,6)||"맞춤법",why:S(x.why).slice(0,60),rule:S(x.rule).slice(0,30)}));
+}
+function spErr(e){const c=e&&e.code;return c==="cancelled"?"중지했습니다.":c==="not_granted"||c==="sampling_disabled"||c==="capability_disabled"?"이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.":c==="rate_limited"?"요청이 많습니다. 잠시 후 다시 눌러 주세요.":c==="invalid_json"?"결과 형식을 읽지 못했습니다. 다시 눌러 주세요.":c==="refused"?"이 문장은 검사하지 못했습니다.":"검사하지 못했습니다. 잠시 후 다시 눌러 주세요."}
+$("spOne").addEventListener("click",async()=>{
+  const text=el.src.value;if(!text.trim()){spStatus("검사할 문장이 없습니다.");return}
+  const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
+  const s=slot();spCtl=new AbortController();spBusy(true);spStatus("검사 중입니다. 처음 한 번은 Claude 사용 허락 창이 뜹니다.");
+  try{const r=await sample.json(promptOne(text),{signal:spCtl.signal});SP[s]=cleanItems(r&&r.items,text);spStatus(SP[s].length?`${SP[s].length}건을 찾았습니다. 수정안을 확인하고 적용하세요.`:"찾은 오류가 없습니다.")}
+  catch(e){spStatus(spErr(e))}finally{spBusy(false);update()}
+});
+$("spAll").addEventListener("click",async()=>{
+  if(!CLS)return;const list=CLS.students.map((st,i)=>({i,st})).filter(o=>o.st.text.trim());
+  if(!list.length){spStatus("입력된 세특이 없습니다.");return}
+  const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
+  spCtl=new AbortController();spBusy(true);let done=0,found=0;
+  try{
+    for(let k=0;k<list.length;k+=8){
+      const part=list.slice(k,k+8);spStatus(`학급 검사 중 ${done}/${list.length}명`);
+      const r=await sample.json(promptMany(part),{signal:spCtl.signal});
+      const arr=r&&Array.isArray(r.students)?r.students:[];
+      for(const o of part){const hit=arr.find(x=>x&&+x.no===o.st.no);SP["s"+o.i]=cleanItems(hit&&hit.items,o.st.text);found+=SP["s"+o.i].length}
+      done+=part.length;update();
+    }
+    spStatus(`${done}명 검사 완료, ${found}건. 학급 전체 탭의 '맞춤법' 열에서 학생별 건수를 볼 수 있습니다.`);
+  }catch(e){spStatus(spErr(e)+(done?` (${done}명까지 검사함)`:""))}finally{spBusy(false);update()}
+});
+$("spStop").addEventListener("click",()=>{if(spCtl)spCtl.abort()});
+function applyFix(x){const t=el.src.value;const k=t.indexOf(x.wrong);if(k<0)return;el.src.value=t.slice(0,k)+x.right+t.slice(k+x.wrong.length);update()}
+function renderSpell(t,S){
+  $("tabSp").textContent=S.length?`맞춤법 ${S.length}`:"맞춤법";
+  $("spApplyAll").hidden=!S.length;
+  $("spList").innerHTML=S.length?'<table><thead><tr><th>구분</th><th>수정안</th><th>이유</th><th></th></tr></thead><tbody>'+S.map((x,n)=>`<tr class="row" data-s="${x.start}" data-e="${x.end}"><td><span class="pill sp">${esc(x.type)}</span></td><td class="fix"><del>${esc(x.wrong)}</del> → <ins>${esc(x.right)}</ins></td><td class="src">${esc(x.why)}${x.rule?" · "+esc(x.rule):""}</td><td><button class="ghost" data-fix="${n}">적용</button></td></tr>`).join("")+"</tbody></table>":"";
+  $("spList").__items=S;
+  const chunks=nvChunks(t);
+  $("nvChunks").innerHTML=chunks.length>1?chunks.map((c,n)=>`<button class="ghost" data-chunk="${n}">네이버용 조각 ${n+1} (${c.length}자) 복사</button>`).join(""):"";
+  $("nvChunks").__chunks=chunks;
+}
+$("spList").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-fix]");
+  if(b){applyFix($("spList").__items[+b.dataset.fix]);return}
+  const tr=e.target.closest("tr.row");if(tr){el.src.focus();el.src.setSelectionRange(+tr.dataset.s,+tr.dataset.e)}
+});
+$("spApplyAll").addEventListener("click",()=>{const S=[...($("spList").__items||[])].sort((a,b)=>b.start-a.start);let t=el.src.value;for(const x of S){if(t.slice(x.start,x.end)===x.wrong)t=t.slice(0,x.start)+x.right+t.slice(x.end)}el.src.value=t;update()});
+function nvChunks(t){
+  t=t.trim();if(!t)return [];const out=[];let curC="";
+  for(const se of sentences(t).map(x=>x.s)){
+    let piece=se;
+    while(piece.length>300){if(curC){out.push(curC);curC=""}out.push(piece.slice(0,300));piece=piece.slice(300)}
+    if((curC?curC.length+1:0)+piece.length>300){out.push(curC);curC=piece}else curC=curC?curC+" "+piece:piece;
+  }
+  if(curC)out.push(curC);return out;
+}
+async function copyText(txt){try{await navigator.clipboard.writeText(txt);spStatus("복사했습니다. 검사기 입력란에 붙여 넣으세요.");return true}catch(_){spStatus("복사가 막혀 있습니다. 입력란에서 전체 선택 후 복사하세요.");return false}}
+document.querySelectorAll("a.ext").forEach(a=>a.addEventListener("click",()=>{const t=el.src.value.trim();if(!t)return;
+  const chunks=nvChunks(t);copyText(a.id==="extNv"&&chunks.length>1?chunks[0]:t);
+  if(a.id==="extNv"&&chunks.length>1)setTimeout(()=>spStatus(`300자를 넘어 조각 1을 복사했습니다. 나머지는 아래 조각 버튼으로 복사하세요.`),50)}));
+$("nvChunks").addEventListener("click",e=>{const b=e.target.closest("button[data-chunk]");if(b)copyText($("nvChunks").__chunks[+b.dataset.chunk])});
+
+/* ---------- 학급 엑셀: NEIS [과목별세부능력및특기사항] {엑셀내려받기} 파일 ---------- */
+const NS_M="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
+const NS_R="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+let CLS=null,cur=-1,view="one",draftTimer=0;
+const unx=s=>String(s).replace(/_x([0-9A-Fa-f]{4})_/g,(m,h)=>String.fromCharCode(parseInt(h,16)));
+const colOf=ref=>String(ref).replace(/\d+/g,"");
+const colNum=c=>[...c].reduce((a,ch)=>a*26+ch.charCodeAt(0)-64,0);
+const normH=s=>unx(s||"").replace(/\s+/g,"");
+
+async function readClass(buf){
+  const zip=await JSZip.loadAsync(buf);
+  const P=new DOMParser();
+  const xml=async p=>{const f=zip.file(p);return f?P.parseFromString(await f.async("string"),"application/xml"):null};
+  const wb=await xml("xl/workbook.xml");
+  if(!wb)throw new Error("엑셀 파일 구조를 읽지 못했습니다. .xlsx 파일인지 확인하세요.");
+  const rels=await xml("xl/_rels/workbook.xml.rels");
+  const relMap={};if(rels)[...rels.getElementsByTagName("Relationship")].forEach(r=>{relMap[r.getAttribute("Id")]=r.getAttribute("Target")});
+  const sst=[];const ss=await xml("xl/sharedStrings.xml");
+  if(ss)[...ss.getElementsByTagNameNS(NS_M,"si")].forEach(si=>sst.push(unx([...si.getElementsByTagNameNS(NS_M,"t")].map(t=>t.textContent).join(""))));
+  const text=c=>{const t=c.getAttribute("t");
+    if(t==="inlineStr")return unx([...c.getElementsByTagNameNS(NS_M,"t")].map(x=>x.textContent).join(""));
+    const v=c.getElementsByTagNameNS(NS_M,"v")[0];if(!v)return "";
+    return t==="s"?(sst[+v.textContent]||""):unx(v.textContent)};
+  for(const sh of wb.getElementsByTagNameNS(NS_M,"sheet")){
+    const tgt=relMap[sh.getAttributeNS(NS_R,"id")||sh.getAttribute("r:id")];if(!tgt)continue;
+    const path=tgt.startsWith("/")?tgt.slice(1):"xl/"+tgt.replace(/^\.\//,"");
+    const doc=await xml(path);if(!doc)continue;
+    const rows=[...doc.getElementsByTagNameNS(NS_M,"row")];if(rows.length<2)continue;
+    const head={};[...rows[0].getElementsByTagNameNS(NS_M,"c")].forEach(c=>{const h=normH(text(c));if(h)head[h]=colOf(c.getAttribute("r"))});
+    const hk=["세부능력및특기사항","행동특성및종합의견","특기사항"].find(k=>head[k]);if(!hk)continue;
+    const J=head[hk];const detected=hk==="세부능력및특기사항"?"subj":hk==="행동특성및종합의견"?"beh":"ca";
+    const C={ban:head["반/번호"],name:head["성명"],stat:head["학적변동구분"],subj:head["과목"],code:head["과목코드"],year:head["학년도"],term:head["학기"],grade:head["학년"]};
+    const students=[];
+    rows.slice(1).forEach(row=>{
+      const cells={};[...row.getElementsByTagNameNS(NS_M,"c")].forEach(c=>{cells[colOf(c.getAttribute("r"))]=text(c)});
+      if(!Object.values(cells).some(v=>v&&v.trim()))return;
+      const g=k=>C[k]?(cells[C[k]]||""):"";
+      students.push({r:+row.getAttribute("r"),no:students.length+1,ban:g("ban"),name:g("name"),stat:g("stat"),subj:g("subj"),code:g("code"),year:g("year"),term:g("term"),grade:g("grade"),text:cells[J]||"",orig:cells[J]||""});
+    });
+    if(!students.length)throw new Error("학생 행을 찾지 못했습니다.");
+    return {zip,path,doc,J,students,detected,sheet:sh.getAttribute("name")||""};
+  }
+  throw new Error("'세부능력 및 특기사항', '행동특성 및 종합의견', '특기사항' 열을 찾지 못했습니다. NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀내려받기}한 파일인지 확인하세요.");
+}
+
+async function buildClass(){
+  const {zip,path,doc,J,students}=CLS;
+  const rowMap={};[...doc.getElementsByTagNameNS(NS_M,"row")].forEach(r=>{rowMap[r.getAttribute("r")]=r});
+  for(const st of students){
+    const row=rowMap[st.r];if(!row)continue;
+    const ref=J+st.r;const cs=[...row.getElementsByTagNameNS(NS_M,"c")];
+    let c=cs.find(x=>x.getAttribute("r")===ref);
+    if(!c){c=doc.createElementNS(NS_M,"c");c.setAttribute("r",ref);row.insertBefore(c,cs.find(x=>colNum(colOf(x.getAttribute("r")))>colNum(J))||null)}
+    while(c.firstChild)c.removeChild(c.firstChild);
+    const val=st.text.replace(/\r\n?/g,"\n").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
+    if(val){c.setAttribute("t","inlineStr");const is=doc.createElementNS(NS_M,"is"),t=doc.createElementNS(NS_M,"t");
+      t.setAttributeNS("http://www.w3.org/XML/1998/namespace","xml:space","preserve");t.textContent=val;is.appendChild(t);c.appendChild(is)}
+    else c.removeAttribute("t");
+  }
+  let out=new XMLSerializer().serializeToString(doc);
+  if(!out.startsWith("<?xml"))out='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+out;
+  zip.file(path,out);
+  return zip.generateAsync({type:"blob",compression:"DEFLATE"});
+}
+
+function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t);if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
+const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj,CLS.students.length].join("|")};
+function saveDrafts(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{const d={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text});store.set(draftKey(),JSON.stringify(d))},400)}
+function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
+
+function label(st){return st.no+"번"}
+function who(st){return [st.ban&&("반/번호 "+st.ban),st.name,st.stat&&st.stat!=="재학"?st.stat:""].filter(Boolean).join(" · ")}
+function renderRoster(){
+  if(!CLS)return;
+  $("nums").innerHTML=CLS.students.map((st,i)=>{const s=stStatus(st);const b=byteOf(st.text).b;return `<button class="${s}${i===cur?" cur":""}" data-i="${i}" title="${esc(label(st)+" "+(st.name||"")+" · "+b.toLocaleString()+"Byte")}" aria-label="${st.no}번 학생">${st.no}</button>`}).join("");
+  const st=CLS.students[cur];
+  $("curS").textContent=label(st)+" / "+CLS.students.length+"명";
+  const extra=st.stat&&st.stat!=="재학"?" — 학적변동일까지의 내용을 입력 (NEIS 매뉴얼Ⅰ p.513)":"";
+  $("curWho").textContent=(who(st)||"성명·반/번호 칸이 비어 있는 파일")+extra;
+}
+function openStudent(i){
+  if(!CLS)return;cur=Math.max(0,Math.min(CLS.students.length-1,i));
+  el.src.value=CLS.students[cur].text;$("edSub").textContent="학급 파일의 J열(세부능력 및 특기사항)을 편집 중";
+  update();el.src.scrollTop=0;
+}
+function dupMap(){
+  const m=new Map();
+  CLS.students.forEach(st=>{for(const se of sentences(st.text)){const k=se.s.replace(/\s+/g,"");if(k.length<15)continue;if(!m.has(k))m.set(k,{s:se.s,who:new Set()});m.get(k).who.add(st.no)}});
+  return [...m.values()].filter(v=>v.who.size>1);
+}
+function renderClassView(){
+  if(!CLS)return;
+  const dups=dupMap();const dupBy={};dups.forEach(d=>d.who.forEach(n=>{dupBy[n]=(dupBy[n]||0)+1}));
+  let over=0,empty=0;
+  const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
+    const b=byteOf(st.text).b;if(b>LIM())over++;if(!st.text.trim())empty++;
+    const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
+    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM()?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td class="num">${spellCount(i)||""}</td><td>${pill}</td></tr>`}).join("");
+  const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th><th>맞춤법</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · ${LIM().toLocaleString()}Byte 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
+  const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
+  $("classView").innerHTML=sum+head+dl;
+}
+function setView(v){view=v;$("tabOne").setAttribute("aria-selected",v==="one");$("tabSp").setAttribute("aria-selected",v==="sp");$("tabAll").setAttribute("aria-selected",v==="all");$("findings").hidden=v!=="one";$("spellView").hidden=v!=="sp";$("classView").hidden=v!=="all";if(v==="all")renderClassView()}
+$("tabOne").addEventListener("click",()=>setView("one"));
+$("tabAll").addEventListener("click",()=>setView("all"));
+$("tabSp").addEventListener("click",()=>setView("sp"));
+$("nums").addEventListener("click",e=>{const b=e.target.closest("button[data-i]");if(b)openStudent(+b.dataset.i)});
+$("classView").addEventListener("click",e=>{const tr=e.target.closest("tr.row");if(tr)openStudent(+tr.dataset.i)});
+$("prevS").addEventListener("click",()=>openStudent(cur-1));
+$("nextS").addEventListener("click",()=>openStudent(cur+1));
+
+function classMode(on){
+  $("roster").hidden=!on;$("tabAll").hidden=!on;$("spAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;$("sampleBtn").hidden=on;
+  if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
+}
+$("xlsx").addEventListener("change",async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  try{
+    const data=await readClass(await f.arrayBuffer());
+    CLS={...data,fileName:f.name};const m=CLS.students[0];
+    if(data.detected==="ca"){if(!isCA())setArea("auto")}else if(data.detected!==MODE)setArea(data.detected);
+    $("classInfo").innerHTML=`<b>${esc([m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "))}</b> · ${CLS.students.length}명 · ${esc(f.name)}`;
+    classMode(true);note("");
+    let saved=null;try{saved=JSON.parse(store.get(draftKey())||"null")}catch(_){}
+    const n=saved?Object.keys(saved).filter(r=>CLS.students.some(st=>String(st.r)===r&&st.orig!==saved[r])).length:0;
+    if(n){note(`이 기기에 저장된 같은 과목·학급의 작업 내용이 ${n}명분 있습니다. <button class="ghost" id="useDraft">작업 내용 불러오기</button> <button class="ghost" id="dropDraft">파일 내용으로 시작</button>`);
+      $("useDraft").onclick=()=>{CLS.students.forEach(st=>{if(saved[st.r]!=null)st.text=saved[st.r]});note("");openStudent(cur)};
+      $("dropDraft").onclick=()=>{store.set(draftKey(),"{}");note("")};}
+    if(m.subj&&/^(공통국어|공통수학|공통영어|통합사회|통합과학|한국사)\s?[12]$/.test(m.subj))note((n?$("notice").innerHTML+"<br>":"")+"공통과목은 1·2를 합산해 500자 이내로 기재합니다 (기재요령 p.208, NEIS 매뉴얼Ⅰ p.513). 이 화면은 이 파일의 과목만 셉니다.");
+    openStudent(0);setView("all");
+  }catch(err){note(esc(err.message||"파일을 읽지 못했습니다."))}
+});
+$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);const d=store.get("setuk-draft");el.src.value=d||SAMPLE;$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"예시 문장이 들어 있습니다. 지우고 붙여 넣으세요.";update()});
+$("saveX").addEventListener("click",async()=>{
+  if(!CLS)return;
+  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
+  const over=CLS.students.filter(st=>byteOf(st.text).b>LIM()).map(st=>st.no);
+  const fname=CLS.fileName.replace(/\.xlsx$/i,"")+"_세특입력.xlsx";
+  try{
+    const blob=await buildClass();
+    if(dl)await dl.save({filename:fname,data:blob});
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+    note("저장했습니다. NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀업로드} 후 {저장}하세요 (NEIS 매뉴얼Ⅰ p.514)."+(over.length?` ${LIM().toLocaleString()}Byte를 넘는 학생이 있습니다: ${over.join(", ")}번.`:""));
+  }catch(err){
+    if(err&&err.code==="declined")note("저장을 취소했습니다.");
+    else if(err&&err.code==="rate_limited")note("저장 확인 창이 이미 열려 있습니다. 그 창을 먼저 닫아 주세요.");
+    else note("저장하지 못했습니다"+(err&&err.message?": "+esc(err.message):"."));
+  }
+});
+
+
+/* ---------- 패턴 틀 ---------- */
+const TPL={
+ subj:[
+  {n:"방법 중심",w:"아로리 2026 발췌에서 가장 흔한 구조(방법 서술만, 99문단 중 22)",t:"〔수업 활동·과제〕에서 〔자료·도구〕를 활용하여 〔탐구 대상〕을 분석함. 〔분석 결과〕를 정리하여 〔결론·주장〕을 제시함."},
+  {n:"계기→방법→확장",w:"아로리 2026 발췌의 계기+방법+확장 14문단, 방법+확장 14문단",t:"〔단원·수업 내용〕을 학습하며 〔궁금한 점〕에 관심을 갖고 〔조사·분석 방법〕으로 탐구함. 〔탐구 결과〕를 정리하여 발표함. 이후 〔후속 주제〕를 추가로 조사하여 〔확장한 내용〕을 살펴봄."},
+  {n:"자료·지도 해석",w:"아로리 2026 사회 계열 문단의 끝 서술어 상위: 제시함, 탐구함, 분석함",t:"〔통계·지도 자료〕를 활용하여 〔지역·현상〕의 〔분포·변화〕를 시각화함. 〔원인〕을 〔기준〕으로 나누어 분석하고 〔대안·제언〕을 제시함."},
+  {n:"독서 연계",w:"독후활동 외 교육활동이 있을 때만 도서명 기재 가능(요령 p.157 다, 길잡이 p.153). 아로리 2026 도서 표기 문단 33퍼센트",t:"\"〔도서명〕\"(〔저자〕)을 읽고 〔주목한 내용〕에 주목하여 〔수업 개념〕과 연결함. 〔토론·비교·발표 활동〕에서 〔학생의 견해〕를 제시함."},
+  {n:"수행평가 과정",w:"예시 자료의 구성 요소: 평가 과제에서 관찰한 수행 과정·결과, 성취수준(예시 자료 일러두기). 성취기준·성취수준 근거(요령 p.95)",t:"〔평가 과제〕에서 〔수행 과정〕을 거쳐 〔산출물〕을 완성함. 〔핵심 개념〕을 〔적용 방식〕으로 설명하는 등 〔성취수준의 특성〕을 보임."},
+  {n:"근거→총평",w:"교사 총평은 근거가 된 행동 뒤에 둠(예시 자료 일러두기, 요령 p.19 5-가)",t:"〔근거가 된 구체적 행동〕을 통해 〔역량·교과 특성〕이 드러남."}
+ ],
+ auto:[
+  {n:"역할·실천",w:"활동 실적, 진보의 정도, 행동의 변화를 종합해 개별 특성이 드러나게(요령 p.82 가)",t:"〔활동명〕에서 〔역할〕을 맡아 〔구체적 수행 내용〕함. 〔문제 상황〕에서 〔해결 방법〕을 제안하여 〔결과〕를 이끌어 냄."},
+  {n:"정량 기록",w:"정량적 기록이 가능한 부분은 횟수와 시간을 입력할 수 있음(요령 p.82 나)",t:"〔활동명〕(〔횟수·시간〕)에 참여하여 〔활동 내용〕함. 〔활동 전후의 변화〕를 보임."}
+ ],
+ club:[
+  {n:"주제 탐구",w:"활동 내용을 종합해 개별 특성이 드러나게, 단순 나열 지양(요령 p.82 가)",t:"〔동아리 활동 주제〕를 정해 〔조사·제작 과정〕을 수행함. 〔역할〕을 맡아 〔협업 방식〕으로 〔결과물〕을 완성함."},
+  {n:"성장 서술",w:"진보의 정도, 행동의 변화(요령 p.82 가)",t:"〔활동 초기 모습〕이었으나 〔계기·노력〕을 거치며 〔변화한 행동〕을 보임."}
+ ],
+ career:[
+  {n:"탐색→계획",w:"학생이 수행한 노력과 활동, 참여도와 태도의 변화(길잡이 p.82 10-② 비고)",t:"〔진로 탐색 활동〕에서 〔관심 분야〕와 관련된 〔조사·체험 내용〕을 정리함. 이를 바탕으로 〔후속 활동 계획〕을 세움."},
+  {n:"상담·관찰",w:"진로상담 결과, 교사의 상담 및 관찰·평가 내용(길잡이 p.82 10-② 비고). 진로희망은 별도 '희망분야' 칸(길잡이 p.83 10-⑨)",t:"진로 상담에서 〔관심 분야〕에 대한 〔생각·고민〕을 나눔. 〔관찰된 노력〕을 꾸준히 이어 가는 모습을 보임."}
+ ],
+ beh:[
+  {n:"지속 관찰→특성",w:"학년 동안 지속적으로 관찰한 행동특성으로 학생을 총체적으로 이해할 수 있게(길잡이 p.88 13-①)",t:"학년 동안 〔지속적으로 관찰된 행동〕을 보임. 〔구체적 장면〕에서 〔행동〕하는 모습을 통해 〔인성·태도 특성〕이 드러남."},
+  {n:"성장·발전 가능성",w:"성장 정도, 특기사항, 발전 가능성을 고려(길잡이 p.88 13-②)",t:"〔학기 초 모습〕이었으나 〔계기·노력〕을 거치며 〔변화한 모습〕을 보임. 〔발전 가능성〕이 기대됨."}
+ ]
+};
+const PH=/〔[^〕\n]*〕/g;
+function renderTpl(){
+  $("tplChips").innerHTML=TPL[MODE].map((x,i)=>`<button data-tpl="${i}" title="${esc(x.w)}">${esc(x.n)}</button>`).join("");
+}
+function selectPh(from,back){
+  const v=el.src.value;const ms=[...v.matchAll(PH)];if(!ms.length)return false;
+  let m=back?[...ms].reverse().find(x=>x.index+x[0].length<=from):ms.find(x=>x.index>=from);
+  if(!m)m=back?ms[ms.length-1]:ms[0];
+  el.src.focus();el.src.setSelectionRange(m.index,m.index+m[0].length);return true;
+}
+$("tplChips").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-tpl]");if(!b)return;const x=TPL[MODE][+b.dataset.tpl];
+  let v=el.src.value;if(!CLS&&v===SAMPLE)v="";
+  let pos=v?(document.activeElement===el.src?el.src.selectionEnd:v.length):0;
+  const pre=pos>0&&!/\s$/.test(v.slice(0,pos))?" ":"";
+  el.src.value=v.slice(0,pos)+pre+x.t+v.slice(pos);
+  if(!CLS)$("edSub").textContent="패턴 틀을 넣었습니다. 빈칸을 채우세요.";
+  update();selectPh(pos);
+  $("tplHint").textContent=`근거: ${x.w}. Tab으로 다음 빈칸, Shift+Tab으로 이전 빈칸.`;
+});
+el.src.addEventListener("keydown",e=>{
+  if(e.key!=="Tab"||e.altKey||e.ctrlKey||e.metaKey)return;
+  PH.lastIndex=0;if(!PH.test(el.src.value)){PH.lastIndex=0;return}PH.lastIndex=0;
+  e.preventDefault();selectPh(e.shiftKey?el.src.selectionStart:el.src.selectionEnd,e.shiftKey);
+});
+
+/* ---------- 영역 전환 ---------- */
+function setArea(m){
+  if(!MODES[m])return;MODE=m;store.set("setuk-mode-area",m);
+  document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
+  const L=LIM();$("goal").max=L;
+  $("scale").innerHTML=[0,L/3,L*2/3,L].map((v,i)=>`<span>${Math.round(v).toLocaleString()}${i===3?" Byte":""}</span>`).join("");
+  $("brandSub").textContent=`2026 학교생활기록부 기재요령 기준 · ${MODES[m].name} ${L/3}자(${L.toLocaleString()}Byte)`;
+  $("ed-title").textContent=MODES[m].name+" 입력";renderTpl();
+  update();if(CLS&&view==="all")renderClassView();
+}
+$("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]");if(b)setArea(b.dataset.m)});
+
+/* ---------- 시작 ---------- */
+(function init(){
+  const d=store.get("setuk-draft");el.src.value=d!==null&&d!==""?d:SAMPLE;
+  if(d)$("edSub").textContent="이전에 입력하던 내용입니다.";
+  const b=store.get("setuk-blocked");el.blocked.value=b!==null?b:"";
+  el.orgs.value=store.get("setuk-orgs")||"";
+  const g=store.get("setuk-goal");if(g)$("goal").value=g;
+  const m=store.get("setuk-mode")||"";if(m.includes("L"))$("btnL").setAttribute("aria-pressed","true");if(m.includes("R"))$("btnR").setAttribute("aria-pressed","true");
+  setMode();renderCases();
+  const am=store.get("setuk-mode-area");setArea(MODES[am]?am:"subj");
+})();
+</script>
+
+</body>
+</html>
