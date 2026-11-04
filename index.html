@@ -185,6 +185,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .sp-bar .status{font-size:var(--fs-5);color:var(--muted)}
 .sp-ext{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--soft);font-size:var(--fs-5)}
 .sp-ext>span{color:var(--muted);margin-right:2px}
+.sp-ext .status{font-size:var(--fs-6)}
 .sp-chunks{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px}
 .sp-note{padding:0 16px 12px;margin:0;font-size:var(--fs-6);color:var(--muted)}
 .fix{font-size:var(--fs-5)}
@@ -293,20 +294,13 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
       <div class="findings" id="findings"></div>
       <div class="findings" id="classView" hidden></div>
       <div id="spellView" hidden>
-        <div class="sp-bar">
-          <button class="btn" id="spOne">Claude로 맞춤법·띄어쓰기 검사</button>
-          <button class="ghost" id="spAll" hidden>학급 전체 검사</button>
-          <button class="ghost" id="spStop" hidden>중지</button>
-          <button class="ghost" id="spApplyAll" hidden>모두 적용</button>
-          <span class="status" id="spStatus">검사 결과는 보조 의견입니다. 최종 확인은 아래 검사기나 사전으로 하세요.</span>
-        </div>
-        <div class="findings" id="spList"></div>
-        <div class="sp-ext">
+                <div class="sp-ext">
           <span>외부 검사기로 확인</span>
           <a class="ghost ext" href="https://nara-speller.co.kr/speller/" target="_blank" rel="noopener">바른한글(부산대) ↗</a>
           <a class="ghost ext" id="extNv" href="https://search.naver.com/search.naver?query=%EB%A7%9E%EC%B6%A4%EB%B2%95%20%EA%B2%80%EC%82%AC%EA%B8%B0" target="_blank" rel="noopener">네이버 ↗</a>
           <a class="ghost" href="https://stdict.korean.go.kr/" target="_blank" rel="noopener">표준국어대사전 ↗</a>
           <a class="ghost" href="https://kornorms.korean.go.kr/" target="_blank" rel="noopener">한국어 어문 규범 ↗</a>
+          <span class="status" id="spStatus"></span>
         </div>
         <div class="sp-chunks" id="nvChunks"></div>
         <p class="sp-note">검사기 버튼을 누르면 지금 문장이 복사되고 새 탭이 열립니다. 붙여 넣기만 하면 됩니다. 네이버는 한 번에 300자까지만 검사되는 것으로 알려져 있어, 300자를 넘으면 문장 단위 조각 복사 버튼이 생깁니다. 국립국어원은 맞춤법 검사기를 따로 운영하지 않아 사전과 어문 규범으로 연결했습니다.</p>
@@ -649,7 +643,7 @@ const slot=i=>(CLS&&(i!=null?i:cur)>=0)?"s"+(i!=null?i:cur):"solo";
 function spellFindings(t,i){const out=[];for(const x of SP[slot(i)]||[]){const k=t.indexOf(x.wrong);if(k>=0)out.push({...x,start:k,end:k+x.wrong.length})}return out}
 function spellCount(i){return CLS?spellFindings(CLS.students[i].text,i).length:0}
 const spStatus=m=>{$("spStatus").textContent=m};
-function spBusy(on){$("spOne").disabled=on;$("spAll").disabled=on;$("spStop").hidden=!on}
+function spBusy(on){const a=$("spOne"),b=$("spAll"),c=$("spStop");if(a)a.disabled=on;if(b)b.disabled=on;if(c)c.hidden=!on}
 async function getSample(){try{return window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(_){return null}}
 const RULES=`당신은 한국어 어문 규범(한글 맞춤법, 표준어 규정, 외래어 표기법, 띄어쓰기) 교정자입니다. 아래는 고등학교 학교생활기록부 '세부능력 및 특기사항' 문장입니다.
 규칙:
@@ -680,14 +674,14 @@ function cleanItems(items,text){
     .map(x=>({wrong:S(x.wrong),right:x.right,type:S(x.type).slice(0,6)||"맞춤법",why:S(x.why).slice(0,60),rule:S(x.rule).slice(0,30)}));
 }
 function spErr(e){const c=e&&e.code;return c==="cancelled"?"중지했습니다.":c==="not_granted"||c==="sampling_disabled"||c==="capability_disabled"?"이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.":c==="rate_limited"?"요청이 많습니다. 잠시 후 다시 눌러 주세요.":c==="invalid_json"?"결과 형식을 읽지 못했습니다. 다시 눌러 주세요.":c==="refused"?"이 문장은 검사하지 못했습니다.":"검사하지 못했습니다. 잠시 후 다시 눌러 주세요."}
-$("spOne").addEventListener("click",async()=>{
+$("spOne")?.addEventListener("click",async()=>{
   const text=el.src.value;if(!text.trim()){spStatus("검사할 문장이 없습니다.");return}
   const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
   const s=slot();spCtl=new AbortController();spBusy(true);spStatus("검사 중입니다. 처음 한 번은 Claude 사용 허락 창이 뜹니다.");
   try{const r=await sample.json(promptOne(text),{signal:spCtl.signal});SP[s]=cleanItems(r&&r.items,text);spStatus(SP[s].length?`${SP[s].length}건을 찾았습니다. 수정안을 확인하고 적용하세요.`:"찾은 오류가 없습니다.")}
   catch(e){spStatus(spErr(e))}finally{spBusy(false);update()}
 });
-$("spAll").addEventListener("click",async()=>{
+$("spAll")?.addEventListener("click",async()=>{
   if(!CLS)return;const list=CLS.students.map((st,i)=>({i,st})).filter(o=>o.st.text.trim());
   if(!list.length){spStatus("입력된 세특이 없습니다.");return}
   const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
@@ -703,23 +697,24 @@ $("spAll").addEventListener("click",async()=>{
     spStatus(`${done}명 검사 완료, ${found}건. 학급 전체 탭의 '맞춤법' 열에서 학생별 건수를 볼 수 있습니다.`);
   }catch(e){spStatus(spErr(e)+(done?` (${done}명까지 검사함)`:""))}finally{spBusy(false);update()}
 });
-$("spStop").addEventListener("click",()=>{if(spCtl)spCtl.abort()});
+$("spStop")?.addEventListener("click",()=>{if(spCtl)spCtl.abort()});
 function applyFix(x){const t=el.src.value;const k=t.indexOf(x.wrong);if(k<0)return;el.src.value=t.slice(0,k)+x.right+t.slice(k+x.wrong.length);update()}
 function renderSpell(t,S){
   $("tabSp").textContent=S.length?`맞춤법 ${S.length}`:"맞춤법";
-  $("spApplyAll").hidden=!S.length;
+  if($("spApplyAll"))$("spApplyAll").hidden=!S.length;
+  if($("spList")){
   $("spList").innerHTML=S.length?'<table><thead><tr><th>구분</th><th>수정안</th><th>이유</th><th></th></tr></thead><tbody>'+S.map((x,n)=>`<tr class="row" data-s="${x.start}" data-e="${x.end}"><td><span class="pill sp">${esc(x.type)}</span></td><td class="fix"><del>${esc(x.wrong)}</del> → <ins>${esc(x.right)}</ins></td><td class="src">${esc(x.why)}${x.rule?" · "+esc(x.rule):""}</td><td><button class="ghost" data-fix="${n}">적용</button></td></tr>`).join("")+"</tbody></table>":"";
-  $("spList").__items=S;
+  $("spList").__items=S;}
   const chunks=nvChunks(t);
   $("nvChunks").innerHTML=chunks.length>1?chunks.map((c,n)=>`<button class="ghost" data-chunk="${n}">네이버용 조각 ${n+1} (${c.length}자) 복사</button>`).join(""):"";
   $("nvChunks").__chunks=chunks;
 }
-$("spList").addEventListener("click",e=>{
+$("spList")?.addEventListener("click",e=>{
   const b=e.target.closest("button[data-fix]");
   if(b){applyFix($("spList").__items[+b.dataset.fix]);return}
   const tr=e.target.closest("tr.row");if(tr){el.src.focus();el.src.setSelectionRange(+tr.dataset.s,+tr.dataset.e)}
 });
-$("spApplyAll").addEventListener("click",()=>{const S=[...($("spList").__items||[])].sort((a,b)=>b.start-a.start);let t=el.src.value;for(const x of S){if(t.slice(x.start,x.end)===x.wrong)t=t.slice(0,x.start)+x.right+t.slice(x.end)}el.src.value=t;update()});
+$("spApplyAll")?.addEventListener("click",()=>{const S=[...($("spList").__items||[])].sort((a,b)=>b.start-a.start);let t=el.src.value;for(const x of S){if(t.slice(x.start,x.end)===x.wrong)t=t.slice(0,x.start)+x.right+t.slice(x.end)}el.src.value=t;update()});
 function nvChunks(t){
   t=t.trim();if(!t)return [];const out=[];let curC="";
   for(const se of sentences(t).map(x=>x.s)){
@@ -832,8 +827,8 @@ function renderClassView(){
   const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
     const b=byteOf(st.text).b;if(b>LIM())over++;if(!st.text.trim())empty++;
     const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
-    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM()?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td class="num">${spellCount(i)||""}</td><td>${pill}</td></tr>`}).join("");
-  const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th><th>맞춤법</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM()?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td>${$("spClaude")?`<td class="num">${spellCount(i)||""}</td>`:""}<td>${pill}</td></tr>`}).join("");
+  const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th>${$("spClaude")?"<th>맞춤법</th>":""}<th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
   const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · ${LIM().toLocaleString()}Byte 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
   const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
   $("classView").innerHTML=sum+head+dl;
@@ -848,7 +843,7 @@ $("prevS").addEventListener("click",()=>openStudent(cur-1));
 $("nextS").addEventListener("click",()=>openStudent(cur+1));
 
 function classMode(on){
-  $("roster").hidden=!on;$("tabAll").hidden=!on;$("spAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
+  $("roster").hidden=!on;$("tabAll").hidden=!on;if($("spAll"))$("spAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
   if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
 }
 $("xlsx").addEventListener("change",async e=>{
@@ -954,6 +949,8 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
 
 /* ---------- 시작 ---------- */
 (function init(){
+  // Claude 검사는 claude.ai 안에서만 작동하므로, 그 밖에서는 화면에서 뺌
+  if(!(window.claude&&window.claude.use)){const c=$("spClaude");if(c)c.remove()}
   // 예시 문장은 이 기기에서 맨 처음 한 번만 보여 줌
   const d=store.get("setuk-draft");const seen=store.get("setuk-seen");
   if(d){el.src.value=d;$("edSub").textContent="이전에 입력하던 내용입니다."}
