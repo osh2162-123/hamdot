@@ -141,6 +141,10 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .meter-foot input{width:90px;padding:4px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper)}
 .meter-foot input:focus{outline:none;border-color:var(--accent)}
 .meter-foot .sp{flex:1}
+.extra{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.extra input{width:110px}
+.extra input[type=number]{width:70px}
+.extra .xb{font-weight:600;color:var(--ink)}
 .meter-foot>span:last-child{font-size:var(--fs-6)}
 .modes{display:inline-flex;flex-wrap:wrap;gap:2px;background:var(--soft);border-radius:var(--r-ctl);padding:3px}
 .modes button{border:0;background:transparent;border-radius:var(--r-ctl);padding:4px 12px;font-size:var(--fs-5);cursor:pointer;color:var(--muted);white-space:nowrap}
@@ -264,7 +268,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.1</small></h1>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
         <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
@@ -370,11 +374,14 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
               <div class="stat">한글 등 <b id="multi">0</b> × 3</div>
               <div class="stat">영문·숫자·공백 <b id="single">0</b> × 1</div>
               <div class="stat" id="remain"></div>
+              <div class="stat" id="exNote"></div>
             </div>
             <div class="bar" id="bar"><i id="fill"></i></div>
             <div class="scale" id="scale"><span>0</span><span>500</span><span>1,000</span><span>1,500 Byte</span></div>
             <div class="meter-foot">
               <label for="goal">목표 바이트</label><input id="goal" type="number" min="0" max="1500" step="10" placeholder="예: 900">
+              <span class="extra" id="extraClub" hidden><label for="club">부서명</label><input id="club" type="text" placeholder="예: 방송반"><label for="hours">이수시간</label><input id="hours" type="number" min="0" max="999" placeholder="14"><span class="xb" id="clubB"></span></span>
+              <span class="extra" id="extraCareer" hidden><label for="hope">희망분야</label><input id="hope" type="text" placeholder="예: 교사"><span class="xb" id="hopeB"></span></span>
               <div class="modes" role="group" aria-label="기재 영역" id="modes">
                 <button data-m="subj" aria-pressed="true">교과 세특<small>1500</small></button>
                 <button data-m="auto" aria-pressed="false">자율·자치<small>1500</small></button>
@@ -413,6 +420,7 @@ const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아�
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
+const APP_VERSION="1.1"; // 2026-11-05
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -421,7 +429,16 @@ const MODES={
   beh:{name:"행동특성 및 종합의견",max:900}
 };
 let MODE="subj";
-const LIM=()=>MODES[MODE].max;
+/* 동아리 부서명·이수시간, 진로 희망분야는 같은 칸의 바이트에 포함됨(사용자 NEIS 확인, 2026-11-05).
+   동아리: NEIS 실측 '방송반' + 두 자리 이수시간 = 25Byte → 부서명 바이트 + 시간 숫자 바이트 + 14로 맞춤.
+   '(방송반)(14시간) '로 세면 22Byte라 3Byte 차이의 원인은 확인하지 못함. */
+const CLUB_FIXED=14;
+function clubBytes(){const n=(el.club&&el.club.value||"").trim(),h=(el.hours&&el.hours.value||"").trim();if(!n)return 0;return byteOf(n).b+byteOf(h).b+CLUB_FIXED}
+function hopeOf(st){return st?(st.hope||""):(el.hope&&el.hope.value||"")}
+function extraBytes(st){if(MODE==="club")return clubBytes();if(MODE==="career")return byteOf(hopeOf(st).trim()).b;return 0}
+const curSt=()=>(CLS&&cur>=0)?CLS.students[cur]:null;
+const LIM_FOR=st=>MODES[MODE].max-extraBytes(st);
+const LIM=()=>LIM_FOR(curSt());
 const isCA=()=>MODE==="auto"||MODE==="club"||MODE==="career";
 /* ---------- 규칙 ---------- */
 const R=[
@@ -480,7 +497,7 @@ function scanOrgs(t,add){
 
 function blockedWords(){return el.blocked.value.split(/[,，]/).map(v=>v.trim()).filter(Boolean)}
 
-function scan(t){
+function scan(t,lim){
   const F=[];
   const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit});
   for(const r0 of R){if(r0.modes&&!r0.modes.includes(MODE))continue;
@@ -490,12 +507,13 @@ function scan(t){
   for(const w of blockedWords()){let i=0;while((i=t.indexOf(w,i))>-1){add({id:"A12",sev:"err",name:"재학 고교를 알 수 있는 내용",src:"요령 p.19 4"},i,i+w.length,w);i+=w.length}}
   {const re=/〔[^〕\n]*〕/g;let y;while((y=re.exec(t)))F.push({id:"T1",sev:"err",name:"패턴 틀 빈칸이 남아 있음 (함닷 점검, 규정 아님)",src:"—",start:y.index,end:y.index+y[0].length,hit:y[0]})}
   const bc=byteOf(t).b;
-  if(bc>LIM())F.push({id:"A16",sev:"err",name:`글자 수 초과 (${LIM()/3}자 = ${LIM().toLocaleString()}Byte)`,src:"요령 p.208",start:-1,end:-1,hit:bc.toLocaleString()+" Byte"});
+  const L0=lim??LIM();const ex=MODES[MODE].max-L0;
+  if(bc>L0)F.push({id:"A16",sev:"err",name:`글자 수 초과 (${MODES[MODE].max.toLocaleString()}Byte${ex?` − ${MODE==="club"?"부서명·시간":"희망분야"} ${ex}Byte = ${L0.toLocaleString()}Byte`:""})`,src:"요령 p.208",start:-1,end:-1,hit:bc.toLocaleString()+" Byte"});
   for(const se of sentences(t)){
     const core=se.s.replace(/[.\s"'”’)\]]+$/,"");const last=core.slice(-1);const code=last.charCodeAt(0);
     const tailS=se.start+core.length-Math.min(3,core.length),tailE=se.start+core.length;
     if(/[다요까]$/.test(core))F.push({id:"B1",sev:"warn",name:"명사형 어미로 끝나지 않음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
-    else if(code>=0xAC00&&code<=0xD7A3&&(code-0xAC00)%28!==16)F.push({id:"B1",sev:"info",name:"명사형 어미(-ㅁ/-음)가 아닌 끝맺음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
+    else if(code>=0xAC00&&code<=0xD7A3&&![16,10].includes((code-0xAC00)%28))F.push({id:"B1",sev:"info",name:"명사형 어미(-ㅁ/-음, ㄹ받침 뒤 -ㄻ)가 아닌 끝맺음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
     if(MODE!=="beh"&&JUDGE.test(se.s)&&!ACT.test(se.s))F.push({id:"B6",sev:"info",name:"근거 행동 없이 평가어만 있는 문장",src:"요령 p.19 5-가",start:se.start,end:se.start+core.length,hit:core.length>22?core.slice(0,22)+"…":core});
   }
   let x;const sp=/[^가-힣ㄱ-ㆎA-Za-z0-9\s.,()'"\-?!:;\/~〔〕]|%/g;
@@ -511,7 +529,7 @@ function scan(t){
 
 /* ---------- 화면 ---------- */
 const $=id=>document.getElementById(id);
-const el={src:$("src"),bd:$("backdrop"),blocked:$("blocked"),orgs:$("orgs"),find:$("findings"),tally:$("tally"),stage:$("stage")};
+const el={src:$("src"),bd:$("backdrop"),blocked:$("blocked"),orgs:$("orgs"),club:$("club"),hours:$("hours"),hope:$("hope"),find:$("findings"),tally:$("tally"),stage:$("stage")};
 const SEV={err:"오류",warn:"확인",info:"참고"};
 const ORDER={err:0,warn:1,sp:1.5,info:2};
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -541,10 +559,13 @@ function renderMeter(t){
   $("chars").textContent=n.toLocaleString();$("multi").textContent=m.toLocaleString();$("single").textContent=s.toLocaleString();
   $("remain").innerHTML=b>L?'<b style="color:var(--err)">'+(b-L).toLocaleString()+"</b> Byte 초과":"남은 <b>"+(L-b).toLocaleString()+"</b> Byte";
   const fill=$("fill");fill.style.width=Math.min(100,b/L*100)+"%";fill.classList.toggle("over",b>L);
+  $("scale").innerHTML=[0,L/3,L*2/3,L].map((v,i)=>`<span>${Math.round(v).toLocaleString()}${i===3?" Byte":""}</span>`).join("");
+  const ex=MODES[MODE].max-L;$("exNote").textContent=ex?`${MODE==="club"?"부서명·시간":"희망분야"} ${ex}Byte를 빼고 셈`:"";$("goal").max=L;
   const g=parseInt($("goal").value,10);let gm=$("bar").querySelector(".goal");
   if(g>0&&g<=L){if(!gm){gm=document.createElement("span");gm.className="goal";$("bar").appendChild(gm)}gm.style.left=(g/L*100)+"%";gm.title="목표 "+g+" Byte"}else if(gm)gm.remove();
 }
 function update(){
+  if(typeof renderExtra==="function")renderExtra();
   const t=el.src.value;const F=scan(t);const S=spellFindings(t);
   paintBackdrop(t,F,S);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t,S);
   if(CLS&&cur>=0){CLS.students[cur].text=t;saveDrafts();renderRoster();if(view==="all")renderClassView()}
@@ -795,9 +816,9 @@ async function buildClass(){
   return zip.generateAsync({type:"blob",compression:"DEFLATE"});
 }
 
-function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t);if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
+function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st));if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
 const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj,CLS.students.length].join("|")};
-function saveDrafts(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{const d={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text});store.set(draftKey(),JSON.stringify(d))},400)}
+function saveDrafts(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if(st.hope)h[st.r]=st.hope});store.set(draftKey(),JSON.stringify(d));store.set(draftKey()+":hope",JSON.stringify(h))},400)}
 function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
 
 function label(st){return st.no+"번"}
@@ -812,7 +833,7 @@ function renderRoster(){
 }
 function openStudent(i){
   if(!CLS)return;cur=Math.max(0,Math.min(CLS.students.length-1,i));
-  el.src.value=CLS.students[cur].text;$("edSub").textContent="학급 파일의 J열(세부능력 및 특기사항)을 편집 중";
+  el.src.value=CLS.students[cur].text;el.hope.value=CLS.students[cur].hope||"";$("edSub").textContent="학급 파일의 J열(세부능력 및 특기사항)을 편집 중";
   update();el.src.scrollTop=0;
 }
 function dupMap(){
@@ -824,12 +845,12 @@ function renderClassView(){
   if(!CLS)return;
   const dups=dupMap();const dupBy={};dups.forEach(d=>d.who.forEach(n=>{dupBy[n]=(dupBy[n]||0)+1}));
   let over=0,empty=0;
-  const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
-    const b=byteOf(st.text).b;if(b>LIM())over++;if(!st.text.trim())empty++;
+  const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text,LIM_FOR(st)):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
+    const b=byteOf(st.text).b;if(b>LIM_FOR(st))over++;if(!st.text.trim())empty++;
     const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
-    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM()?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td>${$("spClaude")?`<td class="num">${spellCount(i)||""}</td>`:""}<td>${pill}</td></tr>`}).join("");
+    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td>${$("spClaude")?`<td class="num">${spellCount(i)||""}</td>`:""}<td>${pill}</td></tr>`}).join("");
   const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th>${$("spClaude")?"<th>맞춤법</th>":""}<th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
-  const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · ${LIM().toLocaleString()}Byte 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
+  const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · 글자 수 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
   const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
   $("classView").innerHTML=sum+head+dl;
 }
@@ -854,6 +875,7 @@ $("xlsx").addEventListener("change",async e=>{
     if(data.detected==="ca"){if(!isCA())setArea("auto")}else if(data.detected!==MODE)setArea(data.detected);
     $("classInfo").innerHTML=`<b>${esc([m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "))}</b> · ${CLS.students.length}명 · ${esc(f.name)}`;
     classMode(true);note("");
+    try{const hs=JSON.parse(store.get(draftKey()+":hope")||"{}");CLS.students.forEach(st=>{if(hs[st.r])st.hope=hs[st.r]})}catch(_){}
     let saved=null;try{saved=JSON.parse(store.get(draftKey())||"null")}catch(_){}
     const n=saved?Object.keys(saved).filter(r=>CLS.students.some(st=>String(st.r)===r&&st.orig!==saved[r])).length:0;
     if(n){note(`이 기기에 저장된 같은 과목·학급의 작업 내용이 ${n}명분 있습니다. <button class="ghost" id="useDraft">작업 내용 불러오기</button> <button class="ghost" id="dropDraft">파일 내용으로 시작</button>`);
@@ -863,11 +885,11 @@ $("xlsx").addEventListener("change",async e=>{
     openStudent(0);setView("all");
   }catch(err){note(esc(err.message||"파일을 읽지 못했습니다."))}
 });
-$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);const d=store.get("setuk-draft");el.src.value=d||"";$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"";update()});
+$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);el.hope.value=store.get("setuk-hope")||"";const d=store.get("setuk-draft");el.src.value=d||"";$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"";update()});
 $("saveX").addEventListener("click",async()=>{
   if(!CLS)return;
   let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
-  const over=CLS.students.filter(st=>byteOf(st.text).b>LIM()).map(st=>st.no);
+  const over=CLS.students.filter(st=>byteOf(st.text).b>LIM_FOR(st)).map(st=>st.no);
   const fname=CLS.fileName.replace(/\.xlsx$/i,"")+"_세특입력.xlsx";
   try{
     const blob=await buildClass();
@@ -935,12 +957,16 @@ el.src.addEventListener("keydown",e=>{
   e.preventDefault();selectPh(e.shiftKey?el.src.selectionStart:el.src.selectionEnd,e.shiftKey);
 });
 
+/* ---------- 부서명·희망분야 ---------- */
+function renderExtra(){const c=clubBytes();$("clubB").textContent=c?`= ${c}Byte 차지`:"";const st=curSt();const h=byteOf(hopeOf(st).trim()).b;$("hopeB").textContent=h?`= ${h}Byte 차지`:""}
+["club","hours"].forEach(k=>el[k].addEventListener("input",()=>{store.set("setuk-"+k,el[k].value);renderExtra();update();if(CLS&&view==="all")renderClassView()}));
+el.hope.addEventListener("input",()=>{const st=curSt();if(st){st.hope=el.hope.value;saveDrafts()}else store.set("setuk-hope",el.hope.value);renderExtra();update();if(CLS&&view==="all")renderClassView()});
+
 /* ---------- 영역 전환 ---------- */
 function setArea(m){
   if(!MODES[m])return;MODE=m;store.set("setuk-mode-area",m);
   document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
-  const L=LIM();$("goal").max=L;
-  $("scale").innerHTML=[0,L/3,L*2/3,L].map((v,i)=>`<span>${Math.round(v).toLocaleString()}${i===3?" Byte":""}</span>`).join("");
+  const L=MODES[m].max;$("extraClub").hidden=m!=="club";$("extraCareer").hidden=m!=="career";
   $("brandSub").textContent=`2026 학교생활기록부 기재요령 기준 · ${MODES[m].name} ${L/3}자(${L.toLocaleString()}Byte)`;
   $("ed-title").textContent=MODES[m].name+" 입력";renderTpl();
   update();if(CLS&&view==="all")renderClassView();
@@ -958,6 +984,7 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
   else{el.src.value="";$("edSub").textContent=""}
   const b=store.get("setuk-blocked");el.blocked.value=b!==null?b:"";
   el.orgs.value=store.get("setuk-orgs")||"";
+  el.club.value=store.get("setuk-club")||"";el.hours.value=store.get("setuk-hours")||"";el.hope.value=store.get("setuk-hope")||"";
   const g=store.get("setuk-goal");if(g)$("goal").value=g;
   const m=store.get("setuk-mode")||"";if(m.includes("L"))$("btnL").setAttribute("aria-pressed","true");if(m.includes("R"))$("btnR").setAttribute("aria-pressed","true");
   setMode();renderCases();
