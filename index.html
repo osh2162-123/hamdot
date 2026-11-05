@@ -89,6 +89,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .findings tr.row:hover td{background:var(--accent-wash)}
 .findings .id{font-size:var(--fs-6);color:var(--muted);white-space:nowrap}
 .findings .hit{font-weight:500}
+.findings .alt{font-weight:400;font-size:var(--fs-6);color:var(--accent-text);margin-top:2px}
 .findings .src{color:var(--muted);font-size:var(--fs-6);white-space:nowrap}
 .empty-note{padding:12px 16px;color:var(--muted);font-size:var(--fs-5)}
 .notice{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:var(--fs-5);background:var(--warn-bg);color:var(--ink);border-radius:12px;padding:8px 14px}
@@ -268,7 +269,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.1</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.3</small></h1>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
         <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
@@ -420,7 +421,7 @@ const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아�
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.1"; // 2026-11-05
+const APP_VERSION="1.3"; // 2026-11-05
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -449,7 +450,7 @@ const R=[
  {id:"A5",sev:"err",name:"모의고사·학력평가 성적",src:"요령 p.18 3-마",re:/모의고사|모의평가|학력평가|전국연합|백분위|표준점수/g},
  {id:"A6",sev:"warn",name:"논문 투고·출간·지식재산권",src:"요령 p.18 3-바·사·아",re:/학회|학술지|투고|등재|출간|출판|특허|실용신안|상표\s?등록|출원/g},
  {id:"A7",sev:"warn",name:"해외 활동실적",src:"요령 p.18 3-자",re:/해외\s?(?:봉사|연수|활동|탐방|캠프)|어학연수|교환학생/g},
- {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시",src:"요령 p.18 3-차",re:/부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모부?|고모부?/g},
+ {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시",src:"요령 p.18 3-차",re:/(?<!학)부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모(?:부)?(?!티콘|지)|고모(?:부)?/g},
  {id:"A9",sev:"err",name:"장학생·장학금",src:"요령 p.18 3-카",re:/장학/g},
  {id:"A10",sev:"warn",name:"대학명·기관명·상호명·강사명",src:"요령 p.19 3-타",re:/[가-힣]{1,12}대학교|대학원|교수님?|강사|주식회사|㈜|[가-힣]{2,10}(?:재단|협회|연구소)/g},
  {id:"A11",sev:"warn",name:"자격증 명칭·취득",src:"요령 p.19 3-파",re:/자격증|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b/g},
@@ -478,20 +479,82 @@ const RE_GOV=new RegExp(altRe(ORG_GOV),"g");
 const RE_CO=new RegExp(altRe(ORG_CO),"g");
 const RE_CO_EN=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_CO_EN)+")(?![A-Za-z])","g");
 const RE_INT=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_INT)+")(?![A-Za-z])","g");
+
+/* ---------- 교육용 앱·플랫폼과 대체 표현 (v1.3) ----------
+   대체 표현은 「생활기록부 기재 유의어의 대체 표현 예시(2026)」를 정리한 공유 자료를 따름(원문 미확인, 참고용).
+   일반 단어와 겹치는 이름(다음, 라인, 메타, 줌, 알로, 웨이브)은 한글로는 잡지 않고, 영문 표기만 잡음. 엑셀은 '참고'. */
+const ALT_GROUPS=[
+ ["포털사이트","구글 Google 네이버 NAVER Naver Daum"],
+ ["진로 정보망, 진로 정보 사이트","커리어넷 careernet CareerNet 워크넷 메이저맵 majormap MajorMap"],
+ ["직업 선호도 검사","홀랜드 Holland"],
+ ["학습 플랫폼, 원격 학습 플랫폼","구글 클래스룸 구글클래스룸 Google Classroom EBS 온라인클래스 EBS온라인클래스 클래스팅 classting Classting"],
+ ["온라인 단어 학습 앱","클래스카드 classcard ClassCard"],
+ ["온라인 문서 편집기","구글 문서 구글문서 구글 독스 Google Docs"],
+ ["디자인 제작 플랫폼","미리캔버스 miricanvas MiriCanvas 망고보드 mangoboard 캔바 Canva"],
+ ["동영상 플랫폼, 동영상 공유 서비스","유튜브 YouTube Youtube 티빙 TVING 왓챠 watcha WATCHA 넷플릭스 Netflix netflix wavve 디즈니플러스 디즈니+ disneyplus Google TV"],
+ ["영상 편집 프로그램","블로 Vllo VLLO 프리미어 프로 프리미어프로 Premiere Pro 파워디렉터 키네마스터 KineMaster 파이널컷 파이널 컷 Final Cut Pro"],
+ ["사진 편집 프로그램","포토샵 Photoshop 페인트샵 프로 페인트샵 김프 GIMP"],
+ ["동영상 크리에이터, 개인 미디어 제작자","유튜버 YouTuber 틱톡커"],
+ ["엔터테인먼트 플랫폼","틱톡 TikTok"],
+ ["메타버스 플랫폼","개더타운 게더타운 Gather Town Gather 제페토 ZEPETO 이프랜드 ifland"],
+ ["메신저","카카오톡 카톡 KakaoTalk"],
+ ["소셜네트워크서비스(SNS)","인스타그램 Instagram 트위터 Twitter 페이스북 Facebook"],
+ ["온라인 협업 도구","패들렛 Padlet 띵커벨 ThinkerBell 잼보드 Jamboard 노션 Notion"],
+ ["온라인 설문 도구","구글 설문 구글폼 Google Forms"],
+ ["화상 회의","Zoom 웨일온 구글 미트 Google Meet"],
+ ["태블릿 PC","아이패드 iPad 갤럭시탭 갤럭시 탭 Galaxy Tab"],
+ ["휴대용 컴퓨터","크롬북 Chromebook 맥북 MacBook"],
+ ["문서 작성 프로그램","hwp HWP MS워드 MS 워드 MS Word 한컴오피스"],
+ ["스프레드시트","한셀"],
+ ["생성형 인공지능, 대화형 인공지능 챗봇","챗GPT 챗지피티 ChatGPT 제미나이 뤼튼 퍼플렉시티 Perplexity Copilot 코파일럿"]
+];
+/* '참고'로만 두는 이름: 일반 단어나 사람 이름과 겹치는 경우 */
+const ALT_SOFT=[
+ ["스프레드시트","엑셀 Excel"],
+ ["소셜네트워크서비스(SNS), 메신저","LINE Meta"],
+ ["온라인 협업 도구","Allo"],
+ ["생성형 인공지능","클로드 Claude Gemini"]
+];
+/* 영문 표기에 붙이는 대체 예 (B3) */
+const ALT_B3={HTML:"웹 페이지 제작 언어",CSS:"스타일 시트 언어",VR:"가상현실",AR:"증강현실",KTX:"고속 열차",SRT:"고속 열차",MBTI:"성격유형 검사",IAEA:"국제기구"};
+const ALT={};const splitNames=str=>{const out=[];const multi=str.match(/[A-Za-z가-힣]+(?: [A-Za-z가-힣+]+)*/g)||[];return multi};
+function parseNames(str){
+  /* 공백이 든 이름(구글 클래스룸, Google Docs 등)을 먼저 뽑고 나머지는 공백으로 나눔 */
+  const known=["구글 클래스룸","Google Classroom","EBS 온라인클래스","구글 문서","구글 독스","Google Docs","Google TV","프리미어 프로","Premiere Pro","파이널 컷","Final Cut Pro","페인트샵 프로","Gather Town","갤럭시 탭","Galaxy Tab","MS 워드","MS Word","구글 미트","Google Meet","구글 설문","Google Forms"];
+  let rest=" "+str+" ";const out=[];
+  for(const k of known){if(rest.includes(" "+k+" ")){out.push(k);rest=rest.split(" "+k+" ").join(" ")}}
+  return out.concat(rest.trim().split(/\s+/).filter(Boolean));
+}
+const EDU_HARD=[],EDU_SOFT=[];
+for(const [alt,str] of ALT_GROUPS)for(const n of parseNames(str)){ALT[n]=alt;EDU_HARD.push(n)}
+for(const [alt,str] of ALT_SOFT)for(const n of parseNames(str)){ALT[n]=alt;EDU_SOFT.push(n)}
+/* 기존 사전 이름에도 대체 예를 붙임 */
+Object.assign(ALT,{"애플":"","카카오":"메신저·포털 서비스","쿠팡":"온라인 쇼핑몰","배달의민족":"배달 앱","챗GPT":"생성형 인공지능, 대화형 인공지능 챗봇","오픈AI":"","OpenAI":""});
+for(const k of Object.keys(ALT))if(!ALT[k])delete ALT[k];
+for(const n of ORG_INT)ALT[n]=ALT[n]||"국제기구";
+const bound=list=>{const ko=[],en=[];for(const n of list)(/^[A-Za-z]/.test(n)?en:ko).push(n);
+  const parts=[];if(ko.length)parts.push("(?:"+altRe(ko)+")");if(en.length)parts.push("(?<![A-Za-z])(?:"+altRe(en)+")(?![A-Za-z])");return new RegExp(parts.join("|"),"g")};
+/* 블로그·한글처럼 앞뒤에 붙어 다른 낱말이 되는 경우는 제외 */
+const RE_EDU=new RegExp(bound(EDU_HARD).source.replace("블로","블로(?!그)"),"g");
+const RE_EDU_SOFT=bound(EDU_SOFT);
+const altOf=h=>ALT[h]||ALT[h.replace(/\s+/g," ")]||"";
+
 const RE_HQ=/[가-힣A-Za-z0-9]{2,15}\s?(?:본사|지사|사옥)/g;
 const RE_KR_PUB=/한국[가-힣]{2,10}(?:공사|공단|연구원|진흥원|센터|협회|재단)/g;
 function userOrgs(){return el.orgs.value.split(/[,，]/).map(v=>v.trim()).filter(Boolean)}
 function scanOrgs(t,add){
   const spans=[];
-  const put=(a,b,sev,name,h)=>{if(spans.some(([s,e])=>a<e&&b>s))return;spans.push([a,b]);add({id:"A10",sev,name,src:"요령 p.19 3-타"},a,b,h)};
+  const put=(a,b,sev,name,h)=>{if(spans.some(([s,e])=>a<e&&b>s))return;spans.push([a,b]);add({id:"A10",sev,name,src:"요령 p.19 3-타",alt:altOf(h)},a,b,h)};
   const hit=(re,sev,name)=>{re.lastIndex=0;let x;while((x=re.exec(t)))put(x.index,x.index+x[0].length,sev,name,x[0].trim())};
   for(const w of userOrgs()){let i=0;while((i=t.indexOf(w,i))>-1){put(i,i+w.length,"warn","기관·상호명 (직접 추가)",w);i+=w.length}}
   hit(RE_HQ,"warn","상호명 (본사·지사·사옥)");
   hit(RE_GOV,"warn","기관명 (교육관련기관 외)");
   hit(RE_KR_PUB,"warn","기관명 (공공기관)");
+  hit(RE_EDU,"warn","상호명 (교육용 앱·플랫폼·제품)");
   hit(RE_CO,"warn","상호명 (기업·브랜드·플랫폼)");
   hit(RE_CO_EN,"warn","상호명 (기업·브랜드·플랫폼)");
   hit(RE_INT,"info","국제기구명 (학습 내용이면 문맥 판단)");
+  hit(RE_EDU_SOFT,"info","상호명일 수 있음 (일반 낱말·인명과 겹침, 문맥 판단)");
   return spans;
 }
 
@@ -499,7 +562,7 @@ function blockedWords(){return el.blocked.value.split(/[,，]/).map(v=>v.trim())
 
 function scan(t,lim){
   const F=[];
-  const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit});
+  const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit,alt:r.alt||""});
   for(const r0 of R){if(r0.modes&&!r0.modes.includes(MODE))continue;
     const r={...r0,name:typeof r0.name==="function"?r0.name():r0.name,src:typeof r0.src==="function"?r0.src():r0.src};
     r0.re.lastIndex=0;let x;while((x=r0.re.exec(t))){add(r,x.index,x.index+x[0].length,x[0]);if(!x[0].length)r0.re.lastIndex++}}
@@ -521,7 +584,7 @@ function scan(t,lim){
   const num=/^[ \t]*(?:\d+[.)]|[①-⑳]|[-•*])\s/gm;
   while((x=num.exec(t)))F.push({id:"B2",sev:"info",name:"문단 구분 기호(번호)",src:"요령 p.30",start:x.index,end:x.index+x[0].length,hit:x[0].trim()});
   const en=/[A-Za-z][A-Za-z+\-]*[A-Za-z+]/g;
-  while((x=en.exec(t))){if(!OKEN.has(x[0])&&!orgSpans.some(([a,b])=>x.index>=a&&x.index<b))F.push({id:"B3",sev:"info",name:"영문 표기 (허용 범위 확인)",src:"요령 p.28 ③",start:x.index,end:x.index+x[0].length,hit:x[0]})}
+  while((x=en.exec(t))){if(!OKEN.has(x[0])&&!orgSpans.some(([a,b])=>x.index>=a&&x.index<b))F.push({id:"B3",sev:"info",name:"영문 표기 (허용 범위 확인)",src:"요령 p.28 ③",start:x.index,end:x.index+x[0].length,hit:x[0],alt:ALT_B3[x[0]]||""})}
   const bk=/[“"‘'『「<][^”"’'』」>\n]{1,60}[”"’'』」>]\s*\([가-힣A-Za-z][^)]{0,25}\)/g;
   while(MODE!=="beh"&&(x=bk.exec(t)))F.push({id:"B9",sev:"info",name:"도서 언급: 독후활동 외 교육활동이 있었는지 확인",src:"요령 p.157 다, 길잡이 p.153",start:x.index,end:x.index+x[0].length,hit:x[0].length>24?x[0].slice(0,24)+"…":x[0]});
   return F;
@@ -535,12 +598,14 @@ const ORDER={err:0,warn:1,sp:1.5,info:2};
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
+/* 글자 층(textarea)에 세로 스크롤 막대가 생기면 그 폭만큼 형광펜 층의 오른쪽 여백을 늘려 줄바꿈 위치를 맞춤 */
+function syncBackdrop(){const ta=el.src,bd=el.bd;const sb=ta.offsetWidth-ta.clientWidth;const pr=parseFloat(getComputedStyle(ta).paddingRight)||0;bd.style.paddingRight=(pr+sb)+"px";bd.scrollTop=ta.scrollTop}
 function paintBackdrop(t,F,S){
   const spans=F.filter(f=>f.start>=0).concat((S||[]).map(x=>({...x,sev:"sp"}))).sort((a,b)=>a.start-b.start||ORDER[a.sev]-ORDER[b.sev]);
   let out="",pos=0;
   for(const f of spans){if(f.start<pos)continue;out+=esc(t.slice(pos,f.start))+'<mark class="'+f.sev+'">'+esc(t.slice(f.start,f.end))+"</mark>";pos=f.end}
   out+=esc(t.slice(pos))+"\n ";
-  el.bd.innerHTML=out;el.bd.scrollTop=el.src.scrollTop;
+  el.bd.innerHTML=out;syncBackdrop();
 }
 function renderFindings(F){
   const groups=new Map();
@@ -549,7 +614,7 @@ function renderFindings(F){
   const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
   el.tally.innerHTML=(F.length?["err","warn","info"].filter(k=>c[k]).map(k=>`<span class="pill ${k}">${SEV[k]} ${c[k]}</span>`).join(""):'<span class="pill ok">걸린 항목 없음</span>');
   if(!rows.length){el.find.innerHTML='<div class="empty-note">자동 판정 항목에서 걸린 것이 없습니다. 관찰 근거, 성취기준 연계, 과장 여부(요령 p.19, p.95)는 직접 확인하세요.</div>';return}
-  el.find.innerHTML='<table><thead><tr><th>구분</th><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>'+rows.map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="pill ${r.sev}">${SEV[r.sev]}</span></td><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}</td><td class="src">${esc(r.src)}</td></tr>`).join("")+"</tbody></table>";
+  el.find.innerHTML='<table><thead><tr><th>구분</th><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>'+rows.map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="pill ${r.sev}">${SEV[r.sev]}</span></td><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}${r.alt?`<div class="alt">대체 예: ${esc(r.alt)}</div>`:""}</td><td class="src">${esc(r.src)}</td></tr>`).join("")+"</tbody></table>";
 }
 function renderMeter(t){
   const {b,m,s,n}=byteOf(t);
@@ -573,6 +638,7 @@ function update(){
 }
 el.src.addEventListener("input",update);
 el.src.addEventListener("scroll",()=>{el.bd.scrollTop=el.src.scrollTop});
+try{new ResizeObserver(()=>syncBackdrop()).observe(el.src)}catch(_){window.addEventListener("resize",syncBackdrop)}
 el.blocked.addEventListener("input",()=>{store.set("setuk-blocked",el.blocked.value);update()});
 el.orgs.addEventListener("input",()=>{store.set("setuk-orgs",el.orgs.value);update()});
 $("goal").addEventListener("input",()=>{store.set("setuk-goal",$("goal").value);renderMeter(el.src.value)});
