@@ -1,0 +1,9 @@
+*요약*.txt
+*.xlsx
+*.xls
+개선계획.md
+작업지시_*.md
+보고_*.md
+.agents/
+.aider-desk/
+skills-lock.json
