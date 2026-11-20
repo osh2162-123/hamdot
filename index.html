@@ -67,7 +67,6 @@ button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 .pill.warn{background:var(--warn-bg);color:var(--warn)}
 .pill.info{background:var(--info-bg);color:var(--info)}
 .pill.ok{background:var(--soft);color:var(--muted)}
-.pill.sp{background:transparent;color:var(--c3);box-shadow:inset 0 0 0 1px var(--c3)}
 .sheet-head .spacer{flex:1}
 .blk{display:flex;align-items:center;gap:6px;font-size:var(--fs-5);color:var(--muted)}
 .blk input{width:180px;max-width:42vw;padding:5px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper);font-size:var(--fs-5)}
@@ -125,7 +124,6 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .backdrop mark.err{background:var(--err-bg);box-shadow:inset 0 -2px 0 var(--err)}
 .backdrop mark.warn{background:var(--warn-bg);box-shadow:inset 0 -2px 0 var(--warn)}
 .backdrop mark.info{background:var(--info-bg)}
-.backdrop mark.sp{background:transparent;box-shadow:inset 0 -2px 0 var(--c3)}
 .meter{display:flex;flex-direction:column;gap:7px;flex:none;padding:0 4px}
 .meter-nums{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
 .big{font-size:28px;font-weight:700;letter-spacing:-.03em}
@@ -186,8 +184,6 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .num{text-align:right}
 
 /* 맞춤법 */
-.sp-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--soft)}
-.sp-bar .status{font-size:var(--fs-5);color:var(--muted)}
 .sp-ext{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-top:1px solid var(--soft);font-size:var(--fs-5)}
 .sp-ext>span{color:var(--muted);margin-right:2px}
 .sp-ext .status{font-size:var(--fs-6)}
@@ -269,13 +265,25 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.3</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.4</small></h1>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
         <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
         <label class="ghost file" for="xlsx">학급 엑셀 불러오기<input id="xlsx" type="file" accept=".xlsx" hidden></label>
         <button class="btn" id="saveX" hidden>NEIS 업로드용 엑셀 저장</button>
         <button class="ghost" id="closeX" hidden>학급 닫기</button>
+      </div>
+      <div class="classbar">
+        <label><input id="persistDrafts" type="checkbox"> 이 기기에 계속 저장</label>
+        <span>기본은 이 탭에서만 유지합니다. 공용 컴퓨터에서는 켜지 마세요.</span>
+        <button class="ghost" id="eraseDrafts">저장 내용 지우기</button>
+        <span id="storageStatus" role="status"></span>
+      </div>
+      <div id="legacyDrafts" hidden role="region" aria-label="이전 작업 내용">
+        <p>이전 버전의 작업 내용이 이 기기에 남아 있습니다. 저장 방식을 골라 주세요.</p>
+        <button class="ghost" id="importLegacy">이번에 불러오기</button>
+        <button class="ghost" id="eraseLegacy">지우기</button>
+        <button class="ghost" id="persistLegacy">계속 저장 켜기</button>
       </div>
     </div>
     <div class="notice" id="notice" hidden></div>
@@ -421,7 +429,7 @@ const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아�
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.3"; // 2026-11-05
+const APP_VERSION="1.4"; // 2026-11-20
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -598,10 +606,60 @@ const ORDER={err:0,warn:1,sp:1.5,info:2};
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
+/* 학생 작업 내용은 선택한 저장소에서만 유지합니다. */
+const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:");
+function draftKeys(storage){return Object.keys(storage).filter(isDraftKey)}
+let persistDrafts=store.get("setuk-persist")==="1";
+let storageFailed=false;
+const draftStore={
+  get(k){try{return (persistDrafts?localStorage:sessionStorage).getItem(k)}catch(e){return null}},
+  set(k,v){try{(persistDrafts?localStorage:sessionStorage).setItem(k,v)}catch(e){storageFailed=true;$("storageStatus").textContent="작업 내용을 보관하지 못했습니다. 엑셀로 저장해 주세요."}}
+};
+function changePersistence(on){
+  try{
+    const source=on?sessionStorage:localStorage,target=on?localStorage:sessionStorage;
+    const keys=draftKeys(source);
+    keys.forEach(k=>target.setItem(k,source.getItem(k)));
+    keys.forEach(k=>source.removeItem(k));
+    localStorage.setItem("setuk-persist",on?"1":"0");
+    persistDrafts=on;storageFailed=false;
+  }catch(e){$("storageStatus").textContent="저장 방식을 바꾸지 못했습니다. 엑셀로 저장해 주세요.";$("persistDrafts").checked=persistDrafts;return false}
+  $("persistDrafts").checked=persistDrafts;
+  return true;
+}
+function eraseWork(){
+  try{[localStorage,sessionStorage].forEach(storage=>draftKeys(storage).forEach(k=>storage.removeItem(k)))}
+  catch(e){$("storageStatus").textContent="저장 내용을 지우지 못했습니다.";return}
+  CLS=null;cur=-1;classMode(false);el.src.value="";el.hope.value="";
+  paintBackdrop("",[]);renderFindings([]);renderMeter("");renderDiag("");renderSpell("");
+  $("legacyDrafts").hidden=true;$("edSub").textContent="";
+  $("storageStatus").textContent="학생 작업 내용을 지웠습니다.";
+}
+$("persistDrafts").checked=persistDrafts;
+$("persistDrafts").addEventListener("change",e=>{
+  if(!$("legacyDrafts").hidden){e.target.checked=persistDrafts;$("storageStatus").textContent="먼저 이전 작업 내용의 저장 방식을 골라 주세요.";return}
+  changePersistence(e.target.checked);
+});
+$("eraseDrafts").addEventListener("click",()=>{if(confirm("이 탭과 기기에 저장된 학생 작업 내용을 모두 지울까요?"))eraseWork()});
+function resolveLegacy(action){
+  if(action==="erase"){if(!confirm("이전 학생 작업 내용을 지울까요?"))return;eraseWork();return}
+  if(!changePersistence(action==="persist"))return;
+  $("legacyDrafts").hidden=true;
+  el.src.value=draftStore.get("setuk-draft")||"";el.hope.value=draftStore.get("setuk-hope")||"";update();
+}
+$("importLegacy").addEventListener("click",()=>resolveLegacy("session"));
+$("eraseLegacy").addEventListener("click",()=>resolveLegacy("erase"));
+$("persistLegacy").addEventListener("click",()=>resolveLegacy("persist"));
+window.addEventListener("beforeunload",e=>{
+  const changed=CLS&&CLS.students.some(st=>st.text!==st.exportedText);
+  const sessionWork=!persistDrafts&&((el.src.value&&el.src.value!==SAMPLE)||el.hope.value||CLS&&CLS.students.some(st=>st.text||st.hope));
+  if(changed||sessionWork||storageFailed){e.preventDefault();e.returnValue="닫으면 작업 내용이 사라집니다."}
+});
+
 /* 글자 층(textarea)에 세로 스크롤 막대가 생기면 그 폭만큼 형광펜 층의 오른쪽 여백을 늘려 줄바꿈 위치를 맞춤 */
 function syncBackdrop(){const ta=el.src,bd=el.bd;const sb=ta.offsetWidth-ta.clientWidth;const pr=parseFloat(getComputedStyle(ta).paddingRight)||0;bd.style.paddingRight=(pr+sb)+"px";bd.scrollTop=ta.scrollTop}
-function paintBackdrop(t,F,S){
-  const spans=F.filter(f=>f.start>=0).concat((S||[]).map(x=>({...x,sev:"sp"}))).sort((a,b)=>a.start-b.start||ORDER[a.sev]-ORDER[b.sev]);
+function paintBackdrop(t,F){
+  const spans=F.filter(f=>f.start>=0).sort((a,b)=>a.start-b.start||ORDER[a.sev]-ORDER[b.sev]);
   let out="",pos=0;
   for(const f of spans){if(f.start<pos)continue;out+=esc(t.slice(pos,f.start))+'<mark class="'+f.sev+'">'+esc(t.slice(f.start,f.end))+"</mark>";pos=f.end}
   out+=esc(t.slice(pos))+"\n ";
@@ -631,10 +689,10 @@ function renderMeter(t){
 }
 function update(){
   if(typeof renderExtra==="function")renderExtra();
-  const t=el.src.value;const F=scan(t);const S=spellFindings(t);
-  paintBackdrop(t,F,S);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t,S);
+  const t=el.src.value;const F=scan(t);
+  paintBackdrop(t,F);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t);
   if(CLS&&cur>=0){CLS.students[cur].text=t;saveDrafts();renderRoster();if(view==="all")renderClassView()}
-  else if(t!==SAMPLE)store.set("setuk-draft",t);
+  else if(t!==SAMPLE)draftStore.set("setuk-draft",t);
 }
 el.src.addEventListener("input",update);
 el.src.addEventListener("scroll",()=>{el.bd.scrollTop=el.src.scrollTop});
@@ -724,84 +782,13 @@ function renderDiag(t){
 
 
 
-/* ---------- 맞춤법: Claude 검사(sample) + 외부 검사기 연결 ---------- */
-const SP={};let spCtl=null;
-const slot=i=>(CLS&&(i!=null?i:cur)>=0)?"s"+(i!=null?i:cur):"solo";
-function spellFindings(t,i){const out=[];for(const x of SP[slot(i)]||[]){const k=t.indexOf(x.wrong);if(k>=0)out.push({...x,start:k,end:k+x.wrong.length})}return out}
-function spellCount(i){return CLS?spellFindings(CLS.students[i].text,i).length:0}
+/* ---------- 외부 맞춤법 검사기 연결 ---------- */
 const spStatus=m=>{$("spStatus").textContent=m};
-function spBusy(on){const a=$("spOne"),b=$("spAll"),c=$("spStop");if(a)a.disabled=on;if(b)b.disabled=on;if(c)c.hidden=!on}
-async function getSample(){try{return window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(_){return null}}
-const RULES=`당신은 한국어 어문 규범(한글 맞춤법, 표준어 규정, 외래어 표기법, 띄어쓰기) 교정자입니다. 아래는 고등학교 학교생활기록부 '세부능력 및 특기사항' 문장입니다.
-규칙:
-- 맞춤법, 띄어쓰기, 표준어, 외래어 표기, 문법(조사, 호응) 오류만 찾는다. 문체, 내용, 어휘 선택, 문장 길이는 고치지 않는다.
-- 문장을 '-함.', '-음.', '-임.'처럼 명사형으로 끝맺는 것은 학교생활기록부 기재 방식이므로 오류가 아니다.
-- 규범상 두 가지가 모두 허용되는 띄어쓰기(보조 용언 등)는 지적하지 않는다.
-- 확실한 오류만 보고한다. 없으면 빈 배열로 답한다.
-- wrong은 원문에 있는 그대로의 연속 문자열로, 원문에서 한 번만 나오도록 앞뒤 어절을 포함해 20자 이내로 잡는다. right는 wrong을 대신할 문자열이다.
-- type은 "맞춤법","띄어쓰기","표준어","외래어","문법" 중 하나. why는 30자 이내 설명. rule은 근거 조항(예: "한글 맞춤법 제42항")을 확실히 알 때만 쓰고, 아니면 "".`;
-const promptOne=t=>RULES+`
-JSON만 답한다. 형식: {"items":[{"wrong":"할수 있음","right":"할 수 있음","type":"띄어쓰기","why":"의존 명사는 띄어 씀","rule":"한글 맞춤법 제42항"}]}
-
-[문장]
-<<<
-${t}
->>>`;
-const promptMany=list=>RULES+`
-학생별로 따로 검사한다. JSON만 답한다. 형식: {"students":[{"no":1,"items":[{"wrong":"...","right":"...","type":"...","why":"...","rule":""}]}]}
-`+list.map(o=>`
-### 학생 ${o.st.no}
-<<<
-${o.st.text}
->>>`).join("\n");
-function cleanItems(items,text){
-  if(!Array.isArray(items))return [];
-  const S=x=>typeof x==="string"?x:"";
-  return items.filter(x=>x&&S(x.wrong)&&typeof x.right==="string"&&x.wrong!==x.right&&text.includes(x.wrong))
-    .map(x=>({wrong:S(x.wrong),right:x.right,type:S(x.type).slice(0,6)||"맞춤법",why:S(x.why).slice(0,60),rule:S(x.rule).slice(0,30)}));
-}
-function spErr(e){const c=e&&e.code;return c==="cancelled"?"중지했습니다.":c==="not_granted"||c==="sampling_disabled"||c==="capability_disabled"?"이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.":c==="rate_limited"?"요청이 많습니다. 잠시 후 다시 눌러 주세요.":c==="invalid_json"?"결과 형식을 읽지 못했습니다. 다시 눌러 주세요.":c==="refused"?"이 문장은 검사하지 못했습니다.":"검사하지 못했습니다. 잠시 후 다시 눌러 주세요."}
-$("spOne")?.addEventListener("click",async()=>{
-  const text=el.src.value;if(!text.trim()){spStatus("검사할 문장이 없습니다.");return}
-  const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
-  const s=slot();spCtl=new AbortController();spBusy(true);spStatus("검사 중입니다. 처음 한 번은 Claude 사용 허락 창이 뜹니다.");
-  try{const r=await sample.json(promptOne(text),{signal:spCtl.signal});SP[s]=cleanItems(r&&r.items,text);spStatus(SP[s].length?`${SP[s].length}건을 찾았습니다. 수정안을 확인하고 적용하세요.`:"찾은 오류가 없습니다.")}
-  catch(e){spStatus(spErr(e))}finally{spBusy(false);update()}
-});
-$("spAll")?.addEventListener("click",async()=>{
-  if(!CLS)return;const list=CLS.students.map((st,i)=>({i,st})).filter(o=>o.st.text.trim());
-  if(!list.length){spStatus("입력된 세특이 없습니다.");return}
-  const sample=await getSample();if(!sample){spStatus("이 화면에서는 Claude 검사를 쓸 수 없습니다. 아래 외부 검사기를 이용하세요.");return}
-  spCtl=new AbortController();spBusy(true);let done=0,found=0;
-  try{
-    for(let k=0;k<list.length;k+=8){
-      const part=list.slice(k,k+8);spStatus(`학급 검사 중 ${done}/${list.length}명`);
-      const r=await sample.json(promptMany(part),{signal:spCtl.signal});
-      const arr=r&&Array.isArray(r.students)?r.students:[];
-      for(const o of part){const hit=arr.find(x=>x&&+x.no===o.st.no);SP["s"+o.i]=cleanItems(hit&&hit.items,o.st.text);found+=SP["s"+o.i].length}
-      done+=part.length;update();
-    }
-    spStatus(`${done}명 검사 완료, ${found}건. 학급 전체 탭의 '맞춤법' 열에서 학생별 건수를 볼 수 있습니다.`);
-  }catch(e){spStatus(spErr(e)+(done?` (${done}명까지 검사함)`:""))}finally{spBusy(false);update()}
-});
-$("spStop")?.addEventListener("click",()=>{if(spCtl)spCtl.abort()});
-function applyFix(x){const t=el.src.value;const k=t.indexOf(x.wrong);if(k<0)return;el.src.value=t.slice(0,k)+x.right+t.slice(k+x.wrong.length);update()}
-function renderSpell(t,S){
-  $("tabSp").textContent=S.length?`맞춤법 ${S.length}`:"맞춤법";
-  if($("spApplyAll"))$("spApplyAll").hidden=!S.length;
-  if($("spList")){
-  $("spList").innerHTML=S.length?'<table><thead><tr><th>구분</th><th>수정안</th><th>이유</th><th></th></tr></thead><tbody>'+S.map((x,n)=>`<tr class="row" data-s="${x.start}" data-e="${x.end}"><td><span class="pill sp">${esc(x.type)}</span></td><td class="fix"><del>${esc(x.wrong)}</del> → <ins>${esc(x.right)}</ins></td><td class="src">${esc(x.why)}${x.rule?" · "+esc(x.rule):""}</td><td><button class="ghost" data-fix="${n}">적용</button></td></tr>`).join("")+"</tbody></table>":"";
-  $("spList").__items=S;}
+function renderSpell(t){
   const chunks=nvChunks(t);
   $("nvChunks").innerHTML=chunks.length>1?chunks.map((c,n)=>`<button class="ghost" data-chunk="${n}">네이버용 조각 ${n+1} (${c.length}자) 복사</button>`).join(""):"";
   $("nvChunks").__chunks=chunks;
 }
-$("spList")?.addEventListener("click",e=>{
-  const b=e.target.closest("button[data-fix]");
-  if(b){applyFix($("spList").__items[+b.dataset.fix]);return}
-  const tr=e.target.closest("tr.row");if(tr){el.src.focus();el.src.setSelectionRange(+tr.dataset.s,+tr.dataset.e)}
-});
-$("spApplyAll")?.addEventListener("click",()=>{const S=[...($("spList").__items||[])].sort((a,b)=>b.start-a.start);let t=el.src.value;for(const x of S){if(t.slice(x.start,x.end)===x.wrong)t=t.slice(0,x.start)+x.right+t.slice(x.end)}el.src.value=t;update()});
 function nvChunks(t){
   t=t.trim();if(!t)return [];const out=[];let curC="";
   for(const se of sentences(t).map(x=>x.s)){
@@ -820,7 +807,7 @@ $("nvChunks").addEventListener("click",e=>{const b=e.target.closest("button[data
 /* ---------- 학급 엑셀: NEIS [과목별세부능력및특기사항] {엑셀내려받기} 파일 ---------- */
 const NS_M="http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 const NS_R="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-let CLS=null,cur=-1,view="one",draftTimer=0;
+let CLS=null,cur=-1,view="one";
 const unx=s=>String(s).replace(/_x([0-9A-Fa-f]{4})_/g,(m,h)=>String.fromCharCode(parseInt(h,16)));
 const colOf=ref=>String(ref).replace(/\d+/g,"");
 const colNum=c=>[...c].reduce((a,ch)=>a*26+ch.charCodeAt(0)-64,0);
@@ -884,7 +871,7 @@ async function buildClass(){
 
 function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st));if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
 const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj,CLS.students.length].join("|")};
-function saveDrafts(){clearTimeout(draftTimer);draftTimer=setTimeout(()=>{const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if(st.hope)h[st.r]=st.hope});store.set(draftKey(),JSON.stringify(d));store.set(draftKey()+":hope",JSON.stringify(h))},400)}
+function saveDrafts(){if(!CLS)return;const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if(st.hope)h[st.r]=st.hope});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
 function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
 
 function label(st){return st.no+"번"}
@@ -914,8 +901,8 @@ function renderClassView(){
   const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text,LIM_FOR(st)):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
     const b=byteOf(st.text).b;if(b>LIM_FOR(st))over++;if(!st.text.trim())empty++;
     const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
-    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td>${$("spClaude")?`<td class="num">${spellCount(i)||""}</td>`:""}<td>${pill}</td></tr>`}).join("");
-  const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th>${$("spClaude")?"<th>맞춤법</th>":""}<th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td>${pill}</td></tr>`}).join("");
+  const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
   const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · 글자 수 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
   const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
   $("classView").innerHTML=sum+head+dl;
@@ -930,37 +917,38 @@ $("prevS").addEventListener("click",()=>openStudent(cur-1));
 $("nextS").addEventListener("click",()=>openStudent(cur+1));
 
 function classMode(on){
-  $("roster").hidden=!on;$("tabAll").hidden=!on;if($("spAll"))$("spAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
+  $("roster").hidden=!on;$("tabAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
   if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
 }
 $("xlsx").addEventListener("change",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
   try{
     const data=await readClass(await f.arrayBuffer());
-    CLS={...data,fileName:f.name};const m=CLS.students[0];
+    CLS={...data,fileName:f.name};CLS.students.forEach(st=>st.exportedText=st.orig);const m=CLS.students[0];
     if(data.detected==="ca"){if(!isCA())setArea("auto")}else if(data.detected!==MODE)setArea(data.detected);
     $("classInfo").innerHTML=`<b>${esc([m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "))}</b> · ${CLS.students.length}명 · ${esc(f.name)}`;
     classMode(true);note("");
-    try{const hs=JSON.parse(store.get(draftKey()+":hope")||"{}");CLS.students.forEach(st=>{if(hs[st.r])st.hope=hs[st.r]})}catch(_){}
-    let saved=null;try{saved=JSON.parse(store.get(draftKey())||"null")}catch(_){}
+    try{const hs=JSON.parse(draftStore.get(draftKey()+":hope")||"{}");CLS.students.forEach(st=>{if(hs[st.r])st.hope=hs[st.r]})}catch(_){}
+    let saved=null;try{saved=JSON.parse(draftStore.get(draftKey())||"null")}catch(_){}
     const n=saved?Object.keys(saved).filter(r=>CLS.students.some(st=>String(st.r)===r&&st.orig!==saved[r])).length:0;
     if(n){note(`이 기기에 저장된 같은 과목·학급의 작업 내용이 ${n}명분 있습니다. <button class="ghost" id="useDraft">작업 내용 불러오기</button> <button class="ghost" id="dropDraft">파일 내용으로 시작</button>`);
       $("useDraft").onclick=()=>{CLS.students.forEach(st=>{if(saved[st.r]!=null)st.text=saved[st.r]});note("");openStudent(cur)};
-      $("dropDraft").onclick=()=>{store.set(draftKey(),"{}");note("")};}
+      $("dropDraft").onclick=()=>{draftStore.set(draftKey(),"{}");note("")};}
     if(m.subj&&/^(공통국어|공통수학|공통영어|통합사회|통합과학|한국사)\s?[12]$/.test(m.subj))note((n?$("notice").innerHTML+"<br>":"")+"공통과목은 1·2를 합산해 500자 이내로 기재합니다 (기재요령 p.208, NEIS 매뉴얼Ⅰ p.513). 이 화면은 이 파일의 과목만 셉니다.");
     openStudent(0);setView("all");
   }catch(err){note(esc(err.message||"파일을 읽지 못했습니다."))}
 });
-$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);el.hope.value=store.get("setuk-hope")||"";const d=store.get("setuk-draft");el.src.value=d||"";$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"";update()});
+$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);el.hope.value=draftStore.get("setuk-hope")||"";const d=draftStore.get("setuk-draft");el.src.value=d||"";$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"";update()});
 $("saveX").addEventListener("click",async()=>{
   if(!CLS)return;
-  let dl=null;try{dl=window.claude&&window.claude.use?await window.claude.use("downloads"):null}catch(_){}
   const over=CLS.students.filter(st=>byteOf(st.text).b>LIM_FOR(st)).map(st=>st.no);
   const fname=CLS.fileName.replace(/\.xlsx$/i,"")+"_세특입력.xlsx";
   try{
+    const exportedStudents=CLS.students;
+    const exportedTexts=exportedStudents.map(st=>st.text);
     const blob=await buildClass();
-    if(dl)await dl.save({filename:fname,data:blob});
-    else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+    {const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
+    exportedStudents.forEach((st,i)=>st.exportedText=exportedTexts[i]);
     note("저장했습니다. NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀업로드} 후 {저장}하세요 (NEIS 매뉴얼Ⅰ p.514)."+(over.length?` ${LIM().toLocaleString()}Byte를 넘는 학생이 있습니다: ${over.join(", ")}번.`:""));
   }catch(err){
     if(err&&err.code==="declined")note("저장을 취소했습니다.");
@@ -1026,7 +1014,7 @@ el.src.addEventListener("keydown",e=>{
 /* ---------- 부서명·희망분야 ---------- */
 function renderExtra(){const c=clubBytes();$("clubB").textContent=c?`= ${c}Byte 차지`:"";const st=curSt();const h=byteOf(hopeOf(st).trim()).b;$("hopeB").textContent=h?`= ${h}Byte 차지`:""}
 ["club","hours"].forEach(k=>el[k].addEventListener("input",()=>{store.set("setuk-"+k,el[k].value);renderExtra();update();if(CLS&&view==="all")renderClassView()}));
-el.hope.addEventListener("input",()=>{const st=curSt();if(st){st.hope=el.hope.value;saveDrafts()}else store.set("setuk-hope",el.hope.value);renderExtra();update();if(CLS&&view==="all")renderClassView()});
+el.hope.addEventListener("input",()=>{const st=curSt();if(st){st.hope=el.hope.value;saveDrafts()}else draftStore.set("setuk-hope",el.hope.value);renderExtra();update();if(CLS&&view==="all")renderClassView()});
 
 /* ---------- 영역 전환 ---------- */
 function setArea(m){
@@ -1041,16 +1029,15 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
 
 /* ---------- 시작 ---------- */
 (function init(){
-  // Claude 검사는 claude.ai 안에서만 작동하므로, 그 밖에서는 화면에서 뺌
-  if(!(window.claude&&window.claude.use)){const c=$("spClaude");if(c)c.remove()}
+  try{$("legacyDrafts").hidden=persistDrafts||draftKeys(localStorage).length===0}catch(_){}
   // 예시 문장은 이 기기에서 맨 처음 한 번만 보여 줌
-  const d=store.get("setuk-draft");const seen=store.get("setuk-seen");
+  const d=draftStore.get("setuk-draft");const seen=store.get("setuk-seen");
   if(d){el.src.value=d;$("edSub").textContent="이전에 입력하던 내용입니다."}
   else if(!seen){el.src.value=SAMPLE;store.set("setuk-seen","1");$("edSub").textContent="처음 한 번만 보이는 예시 문장입니다. 필터가 무엇을 잡는지 보여 줍니다. 지우고 시작하세요."}
   else{el.src.value="";$("edSub").textContent=""}
   const b=store.get("setuk-blocked");el.blocked.value=b!==null?b:"";
   el.orgs.value=store.get("setuk-orgs")||"";
-  el.club.value=store.get("setuk-club")||"";el.hours.value=store.get("setuk-hours")||"";el.hope.value=store.get("setuk-hope")||"";
+  el.club.value=store.get("setuk-club")||"";el.hours.value=store.get("setuk-hours")||"";el.hope.value=draftStore.get("setuk-hope")||"";
   const g=store.get("setuk-goal");if(g)$("goal").value=g;
   const m=store.get("setuk-mode")||"";if(m.includes("L"))$("btnL").setAttribute("aria-pressed","true");if(m.includes("R"))$("btnR").setAttribute("aria-pressed","true");
   setMode();renderCases();
