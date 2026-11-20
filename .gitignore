@@ -4,6 +4,9 @@
 개선계획.md
 작업지시_*.md
 보고_*.md
-.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/hamdot-*/
 .aider-desk/
 skills-lock.json
