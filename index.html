@@ -136,7 +136,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .tpl-l{font-size:var(--fs-5);font-weight:600;color:var(--ink);margin-right:2px}
 .tpl button{border:0;background:var(--accent-wash);color:var(--accent-text);border-radius:var(--r-ctl);padding:6px 14px;min-height:32px;font-size:var(--fs-5);font-weight:500;cursor:pointer}
 .tpl button:hover{background:var(--accent);color:var(--accent-ink)}
-.tpl-hint{font-size:var(--fs-6);color:var(--muted);flex-basis:100%}
+.tpl-hint{font-size:12px;letter-spacing:-.03em;color:var(--muted);flex-basis:100%;white-space:normal}
 
 /* 학급 */
 .classbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto}
@@ -246,6 +246,7 @@ button:active,a.ghost:active{transform:scale(.97)}
   .editor .panel-body{min-height:0;overflow:hidden;padding:8px 12px;gap:6px}
   .field{flex:1 0 160px;min-height:160px}
   .tpl,.roster{flex:0 1 auto;min-height:24px;max-height:64px;overflow:auto}
+  .tpl-hint{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .roster .nums{flex:none}
   .meter{flex:none;gap:4px;display:grid;grid-template-columns:minmax(0,1fr) auto}
   .meter-nums,.bar,.meter-foot{grid-column:1/-1}
@@ -270,7 +271,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6.1</small></h1>
       <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
       <div class="settings-wrap">
         <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
@@ -362,7 +363,7 @@ button:active,a.ghost:active{transform:scale(.97)}
           <div class="tpl">
             <span class="tpl-l">패턴 틀</span>
             <span id="tplChips" style="display:contents"></span>
-            <span class="tpl-hint" id="tplHint">틀을 누르면 커서 위치에 들어갑니다. 〔 〕 빈칸은 Tab으로 다음 칸, Shift+Tab으로 이전 칸으로 이동하며 바로 덮어쓸 수 있습니다. 서술어와 연결어는 관찰한 활동 수준에 맞게 직접 쓰세요.</span>
+            <span class="tpl-hint" id="tplHint">틀을 누르면 커서 위치에 들어갑니다. 〔 〕 칸은 Tab, Shift+Tab으로 이동해 덮어씁니다. 서술어와 연결어는 직접 쓰세요.</span>
           </div>
           <div class="field">
             <div id="findingTip" class="finding-tip" role="region" aria-label="현재 점검 항목" hidden></div>
@@ -410,7 +411,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.6"; // 2026-11-21
+const APP_VERSION="1.6.1"; // 2026-11-22
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -433,12 +434,12 @@ const isCA=()=>MODE==="auto"||MODE==="club"||MODE==="career";
 /* ---------- 규칙 ---------- */
 const R=[
  {id:"A1",sev:"err",name:"공인어학시험",src:"요령 p.18 3-가",re:/TOEIC|TOEFL|TEPS|HSK|JLPT|JPT|DELF|DALF|TESTDAF|TORFL|DELE|토익|토플|텝스|한자능력검정|상공회의소\s?한자|실용한자|한자급수|상무한검|한자자격검정/gi},
- {id:"A2",sev:"err",name:"대회 용어(수상경력 외 기재 불가)",src:"요령 p.18 3-나, p.118 / 연수자료 p.7",re:/대회/g,alt:"시상이 없는 단순 행사라면 '체육 행사', '합창제', '한마당' 등. 시상이 있던 대회는 내용 자체를 빼야 함"},
+ {id:"A2",sev:"err",name:"대회 용어(수상경력 외 기재 불가)",src:"요령 p.18 3-나, p.118",re:/대회/g,alt:"시상이 없는 단순 행사라면 '체육 행사', '합창제', '한마당' 등. 시상이 있던 대회는 내용 자체를 빼야 함"},
  {id:"A15",sev:"warn",name:"수상 실적",src:"요령 p.18 3-나, p.118",re:/입상|수상(?!\s?스키)|[금은동]상|장려상|최우수상|우수상/g},
  {id:"A3",sev:"err",name:"교외상",src:"요령 p.18 3-다",re:/표창장|감사장|공로상/g},
  {id:"A4",sev:"warn",name:"인증시험·인증 취득",src:"요령 p.18 3-라",re:/인증\s?시험|급수\s?시험|인증(을|를)?\s?(받|취득|획득|부여)|(\d|[일이삼사오])\s?단계\s?인증|독서\s?인증|인증제/g,alt:"단계별 활동에 참가하여"},
  {id:"A20",sev:"info",name:"'인증서' 표현(문맥 확인)",src:"요령 p.18 3-라",re:/인증서/g},
- {id:"B12",sev:"warn",name:"가운뎃점: 대입 자료에서 깨질 수 있음, 쉼표 권장(삭제 필수는 아님)",src:"요령 p.30 / 연수자료 p.7",re:/[·・‧]/g,alt:"상·중·하위권 → 상, 중, 하위권"},
+ {id:"B12",sev:"warn",name:"가운뎃점: 대입 자료에서 깨질 수 있음, 쉼표 권장(삭제 필수는 아님)",src:"요령 p.30",re:/[·・‧]/g,alt:"상·중·하위권 → 상, 중, 하위권"},
  {id:"B13",sev:"warn",name:"한자: 한글로 입력",src:"요령 p.28",re:/[㐀-䶿一-鿿豈-﫿]+/g},
  {id:"A17",sev:"warn",name:"청소년단체명(정규교육과정 외 기재 불가)",src:"요령 p.78",re:/스카우트|걸스카우트|RCY|청소년적십자|아람단|누리단|해양소년단/g},
  {id:"A5",sev:"err",name:"모의고사·학력평가 성적",src:"요령 p.18 3-마",re:/모의고사|모의평가|학력평가|전국연합|백분위|표준점수/g},
@@ -447,8 +448,8 @@ const R=[
  {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시(높은 지위뿐 아니라 낮은 지위 암시도 불가)",src:"요령 p.18 3-차",re:/(?<!학)부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모(?:부)?(?!티콘|지)|고모(?:부)?/g},
  {id:"A9",sev:"err",name:"장학생·장학금",src:"요령 p.18 3-카",re:/장학/g},
  {id:"A10",sev:"warn",name:"대학명·기관명·상호명·강사명",src:"요령 p.19 3-타",re:/[가-힣]{1,12}대학교|대학원|교수님?|강사|주식회사|㈜|[가-힣]{2,10}(?:재단|협회|연구소)/g},
- {id:"A11",sev:"err",name:"자격증 명칭·취득 사실",src:"요령 p.19 3-파 / 연수자료 p.7",re:/정보처리기사|정보처리기능사|전기기사|전기기능사|정보기기운용기능사|제과기능사|제빵기능사|한국사능력검정|[가-힣]{2,8}기사(?=\s?(자격|시험))|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b|자격증(을|를)?\s?(취득함|취득하였|취득했|취득한|획득|땄|땀)|자격(을|를)?\s?(취득|획득)(함|하였|했|한)/g},
- {id:"A21",sev:"info",name:"'자격증' 언급(명칭·취득 사실 없으면 가능, 문맥 확인)",src:"요령 p.19 3-파 / 연수자료 p.7",re:/자격증/g,alt:"관련 자격증 취득을 위해 노력함"},
+ {id:"A11",sev:"err",name:"자격증 명칭·취득 사실",src:"요령 p.19 3-파",re:/정보처리기사|정보처리기능사|전기기사|전기기능사|정보기기운용기능사|제과기능사|제빵기능사|한국사능력검정|[가-힣]{2,8}기사(?=\s?(자격|시험))|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b|자격증(을|를)?\s?(취득함|취득하였|취득했|취득한|획득|땄|땀)|자격(을|를)?\s?(취득|획득)(함|하였|했|한)/g},
+ {id:"A21",sev:"info",name:"'자격증' 언급(명칭·취득 사실 없으면 가능, 문맥 확인)",src:"요령 p.19 3-파",re:/자격증/g,alt:"관련 자격증 취득을 위해 노력함"},
  {id:"A13",sev:"err",modes:["subj","beh"],name:()=>MODE==="beh"?"방과후학교 활동":"MOOC·방과후학교",src:()=>MODE==="beh"?"요령 p.159 나":"요령 p.118 바-3)·4)",re:/K-?MOOC|MOOC|KOCW|방과\s?후/gi},
  {id:"A14",sev:"warn",name:()=>isCA()?"자율탐구 산출물(소논문) 실적":"연구보고서(소논문)",src:()=>MODE==="subj"?"요령 p.118 바-5)":MODE==="beh"?"요령 p.159 나":"요령 p.82 바, p.209",re:/소논문|연구\s?보고서|논문/g}
 ];
@@ -476,7 +477,7 @@ const RE_CO_EN=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_CO_EN)+")(?![A-Za-z])","g
 const RE_INT=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_INT)+")(?![A-Za-z])","g");
 
 /* ---------- 교육용 앱·플랫폼과 대체 표현 (v1.3) ----------
-   경기도교육청 2026 중등 학교생활기록부 현장지원단 직무연수 자료 p.38(인쇄 쪽 번호, PDF 40쪽) '기재 유의어의 대체표현 예시'를 원문으로 대조함(2026-11-21). 대체어는 예시이며 강제하지 않음.
+   기재 유의어 대체표현 예시 원문과 대조함(2026-11-21). 대체어는 예시이며 강제하지 않음.
    일반 단어와 겹치는 이름(다음, 라인, 메타, 줌, 알로, 웨이브)은 한글로는 잡지 않고, 영문 표기만 잡음. 엑셀은 '참고'. */
 const ALT_GROUPS=[
  ["포털사이트","구글 Google 네이버 NAVER Naver Daum"],
@@ -599,7 +600,7 @@ function scan(t,lim,student=curSt()){
   for(const [patternIndex,re] of selfPatterns.entries())for(const match of t.matchAll(re)){
     const start=match.index,end=start+match[0].length;
     const firstPerson=patternIndex===0||/저는|제가|저의|나는|내가/.test(match[0]);
-    if(!books.some(book=>start<book.index+book[0].length&&end>book.index))add({id:"B10",sev:firstPerson?"warn":"info",name:firstPerson?"셀프 학생부 의심: 학생의 말을 그대로 옮기지 말고 교사가 관찰한 내용으로":"직접 인용: 학생의 말이면 교사 관점으로 바꾸기(명언·도서 인용은 해당 없음)",src:"요령 p.28 / 연수자료 p.39"},start,end,match[0]);
+    if(!books.some(book=>start<book.index+book[0].length&&end>book.index))add({id:"B10",sev:firstPerson?"warn":"info",name:firstPerson?"셀프 학생부 의심: 학생의 말을 그대로 옮기지 말고 교사가 관찰한 내용으로":"직접 인용: 학생의 말이면 교사 관점으로 바꾸기(명언·도서 인용은 해당 없음)",src:"요령 p.28"},start,end,match[0]);
   }
   if(MODE==="auto"){
     for(const match of t.matchAll(/(?:학급|학년|전교)?\s?(?:자치회|학생회)?\s?(?:부회장|회장|부반장|반장|임원)/g)){
@@ -619,13 +620,12 @@ function scan(t,lim,student=curSt()){
   const formatHit=format||(dots.length>=3?dots[0]:null);
   if(formatHit)add({id:"B11",sev:"info",name:"AI 답변 형식 흔적(확인 권장): AI 결과물은 그대로 입력할 수 없음, 관찰 사실과 맞는지 확인",src:"요령 p.19"},formatHit.index,formatHit.index+formatHit[0].length,formatHit[0]);
   if(MODE==="career"&&t.trim()&&!hopeOf(student).trim())add({id:"C2",sev:"info",name:"희망분야 미입력: 정하지 못한 학생도 '진로탐색 중임.' 등으로 입력",src:"요령 p.85"},-1,-1,"");
-  if(MODE==="subj"&&/^특이사항\s?없음\.?$/.test(t.trim()))add({id:"C4",sev:"info",name:"특이사항 없음: 학업성적관리위원회 심의 대상인지 확인",src:"연수자료 p.17"},0,t.length,t);
   if(MODE==="beh")for(const match of t.matchAll(/부족|미흡|산만|불성실|무기력|엎드려|소극적|반항|게으/g))add({id:"C3",sev:"info",name:"부정적 내용: 누가기록 근거를 남겨 두기 권장(쓸 수는 있음)",src:"요령 p.158"},match.index,match.index+match[0].length,match[0]);
   if(CLS&&student){
     const repeated=new Map(dupMap(student,t).filter(d=>d.who.size>=3&&d.who.has(student.no)).map(d=>[d.s.replace(/\s+/g,""),d.who.size]));
     for(const sentence of sentences(t)){
       const count=repeated.get(sentence.s.replace(/\s+/g,""));
-      if(count)add({id:"C5",sev:"info",name:`같은 문장이 ${count}명에게 있음: 개별적 특성이 드러나도록`,src:"연수자료 p.32, 39"},sentence.start,sentence.end,sentence.s);
+      if(count)add({id:"C5",sev:"info",name:`같은 문장이 ${count}명에게 있음: 개별적 특성이 드러나도록`,src:"함닷 점검, 규정 아님"},sentence.start,sentence.end,sentence.s);
     }
   }
   return F;
@@ -1047,7 +1047,8 @@ $("tplChips").addEventListener("click",e=>{
   el.src.value=v.slice(0,pos)+pre+x.t+v.slice(pos);
   if(!CLS)$("edSub").textContent="패턴 틀을 넣었습니다. 빈칸을 채우세요. 서술어와 연결어는 관찰한 활동 수준에 맞게 직접 쓰세요.";
   update();selectPh(pos);
-  $("tplHint").textContent=`근거: ${x.w}. Tab으로 다음 빈칸, Shift+Tab으로 이전 빈칸. 서술어와 연결어는 관찰한 활동 수준에 맞게 직접 쓰세요.`;
+  $("tplHint").textContent=`근거: ${x.w}. Tab, Shift+Tab으로 칸 이동. 서술어와 연결어는 직접 쓰세요.`;
+  $("tplHint").title=$("tplHint").textContent;
 });
 el.src.addEventListener("keydown",e=>{
   if(e.key!=="Tab"||e.altKey||e.ctrlKey||e.metaKey)return;
@@ -1073,6 +1074,7 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
 
 /* ---------- 시작 ---------- */
 (function init(){
+  $("tplHint").title=$("tplHint").textContent;
   try{$("legacyDrafts").hidden=persistDrafts||draftKeys(localStorage).length===0}catch(_){}
   // 예시 문장은 이 기기에서 맨 처음 한 번만 보여 줌
   const d=draftStore.get("setuk-draft");const seen=store.get("setuk-seen");
