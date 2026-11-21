@@ -46,14 +46,19 @@ async function run(){
       const actual=[...new Set(findings.map(f=>f.id))];
       const altChecks=Object.entries(item.alt||{});
       const altOk=altChecks.every(([hit,value])=>findings.some(f=>f.hit===hit&&f.alt.includes(value)));
-      const ok=item.expect.every(id=>actual.includes(id))&&item.not.every(id=>!actual.includes(id))&&altOk;
+      const sevChecks=Object.entries(item.sev||{});
+      const sevOk=sevChecks.every(([id,value])=>{
+        const hits=findings.filter(f=>f.id===id);
+        return hits.length>0&&hits.every(f=>f.sev===value);
+      });
+      const ok=item.expect.every(id=>actual.includes(id))&&item.not.every(id=>!actual.includes(id))&&altOk&&sevOk;
       let result;
       if(ok){passed++;result=item.known_fail?"통과 · known_fail 해제 검토":"통과"}
       else if(item.known_fail){known++;result="알려진 실패"}
       else{failed++;result="실패"}
       const row=document.createElement("tr");row.className=ok?"pass":item.known_fail?"known":"fail";
-      const expected="필수 "+item.expect.join(", ")+" / 제외 "+item.not.join(", ")+altChecks.map(([hit,value])=>` / ${hit}의 대체 예시 포함 ${value}`).join("");
-      const observed=actual.join(", ")+findings.filter(f=>f.alt).map(f=>` / ${f.hit}: ${f.alt}`).join("");
+      const expected="필수 "+item.expect.join(", ")+" / 제외 "+item.not.join(", ")+altChecks.map(([hit,value])=>` / ${hit}의 대체 예시 포함 ${value}`).join("")+sevChecks.map(([id,value])=>` / ${id} 등급 ${value}`).join("");
+      const observed=findings.map(f=>`${f.id}(${f.sev})`).join(", ")+findings.filter(f=>f.alt).map(f=>` / ${f.hit}: ${f.alt}`).join("");
       for(const value of [result,item.mode,item.text,expected,observed,item.note]){
         const cell=document.createElement("td");cell.textContent=value;row.appendChild(cell);
       }
