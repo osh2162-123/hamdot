@@ -305,7 +305,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
         </label>
       </div>
       <div class="findings" id="findings"></div>
-      <p class="empty-note">표시는 보조 의견입니다. 기재 여부와 교육적 판단은 교사가 정합니다.</p>
+      <p class="empty-note">표시는 보조 의견입니다. 기재 여부와 교육적 판단은 교사가 정합니다. 대체 표현은 예시이며, 표시된 단어가 모두 기재 불가인 것은 아닙니다.</p>
       <div class="findings" id="classView" hidden></div>
       <div id="spellView" hidden>
                 <div class="sp-ext">
@@ -490,46 +490,50 @@ const RE_CO_EN=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_CO_EN)+")(?![A-Za-z])","g
 const RE_INT=new RegExp("(?<![A-Za-z])(?:"+altRe(ORG_INT)+")(?![A-Za-z])","g");
 
 /* ---------- 교육용 앱·플랫폼과 대체 표현 (v1.3) ----------
-   대체 표현은 「생활기록부 기재 유의어의 대체 표현 예시(2026)」를 정리한 공유 자료를 따름(원문 미확인, 참고용).
+   경기도교육청 2026 중등 학교생활기록부 현장지원단 직무연수 자료 p.38(인쇄 쪽 번호, PDF 40쪽) '기재 유의어의 대체표현 예시'를 원문으로 대조함(2026-11-21). 대체어는 예시이며 강제하지 않음.
    일반 단어와 겹치는 이름(다음, 라인, 메타, 줌, 알로, 웨이브)은 한글로는 잡지 않고, 영문 표기만 잡음. 엑셀은 '참고'. */
 const ALT_GROUPS=[
  ["포털사이트","구글 Google 네이버 NAVER Naver Daum"],
- ["진로 정보망, 진로 정보 사이트","커리어넷 careernet CareerNet 워크넷 메이저맵 majormap MajorMap"],
- ["직업 선호도 검사","홀랜드 Holland"],
- ["학습 플랫폼, 원격 학습 플랫폼","구글 클래스룸 구글클래스룸 Google Classroom EBS 온라인클래스 EBS온라인클래스 클래스팅 classting Classting"],
+ ["진로정보망, 진로 정보 사이트","커리어넷 careernet CareerNet 워크넷 메이저맵 majormap MajorMap"],
+ ["직업선호도 검사","홀랜드 Holland"],
+ ["학습 플랫폼, 원격 학습 플랫폼","구글 클래스룸 구글클래스룸 Google Classroom EBS 온라인클래스 EBS온라인클래스"],
+ ["학습 플랫폼, 클래스관리 도구, 원격 학습 플랫폼","클래스팅 classting Classting"],
  ["온라인 단어 학습 앱","클래스카드 classcard ClassCard"],
  ["온라인 문서 편집기","구글 문서 구글문서 구글 독스 Google Docs"],
  ["디자인 제작 플랫폼","미리캔버스 miricanvas MiriCanvas 망고보드 mangoboard 캔바 Canva"],
- ["동영상 플랫폼, 동영상 공유 서비스","유튜브 YouTube Youtube 티빙 TVING 왓챠 watcha WATCHA 넷플릭스 Netflix netflix wavve 디즈니플러스 디즈니+ disneyplus Google TV"],
- ["영상 편집 프로그램","블로 Vllo VLLO 프리미어 프로 프리미어프로 Premiere Pro 파워디렉터 키네마스터 KineMaster 파이널컷 파이널 컷 Final Cut Pro"],
+ ["동영상 플랫폼, 동영상 공유 서비스","유튜브 YouTube Youtube 티빙 TVING 왓챠 watcha WATCHA 넷플릭스 Netflix netflix wavve 디즈니플러스 디즈니+ disneyplus Google TV OTT 오티티"],
+ ["영상 제작 프로그램, 영상 편집 프로그램","블로 Vllo VLLO 프리미어 프로 프리미어프로 Premiere Pro 파워디렉터 키네마스터 KineMaster 파이널컷 파이널 컷 Final Cut Pro"],
  ["사진 편집 프로그램","포토샵 Photoshop 페인트샵 프로 페인트샵 김프 GIMP"],
- ["동영상 크리에이터, 개인 미디어 제작자","유튜버 YouTuber 틱톡커"],
+ ["동영상 크리에이터, 동영상 제공자, 개인 미디어 제작자","유튜버 YouTuber 틱톡커"],
  ["엔터테인먼트 플랫폼","틱톡 TikTok"],
- ["메타버스 플랫폼","개더타운 게더타운 Gather Town Gather 제페토 ZEPETO 이프랜드 ifland"],
- ["메신저","카카오톡 카톡 KakaoTalk"],
- ["소셜네트워크서비스(SNS)","인스타그램 Instagram 트위터 Twitter 페이스북 Facebook"],
- ["온라인 협업 도구","패들렛 Padlet 띵커벨 ThinkerBell 잼보드 Jamboard 노션 Notion"],
+ ["메타버스, 소셜커뮤니케이션서비스, 메타버스 플랫폼","개더타운 게더타운 Gather Town Gather 제페토 ZEPETO 이프랜드 ifland"],
+ ["메신저, 메신저 서비스","카카오톡 카톡 KakaoTalk"],
+ ["소셜네트워크서비스, 소셜네트워크서비스(SNS)","인스타그램 Instagram 트위터 Twitter 페이스북 Facebook"],
+ ["협업 플랫폼, 온라인 협업 플랫폼, 온라인 협업 도구","패들렛 Padlet 띵커벨 ThinkerBell 잼보드 Jamboard 노션 Notion"],
  ["온라인 설문 도구","구글 설문 구글폼 Google Forms"],
  ["화상 회의","Zoom 웨일온 구글 미트 Google Meet"],
- ["태블릿 PC","아이패드 iPad 갤럭시탭 갤럭시 탭 Galaxy Tab"],
+ ["태블릿PC","아이패드 iPad 갤럭시탭 갤럭시 탭 Galaxy Tab"],
  ["휴대용 컴퓨터","크롬북 Chromebook 맥북 MacBook"],
  ["문서 작성 프로그램","hwp HWP MS워드 MS 워드 MS Word 한컴오피스"],
  ["스프레드시트","한셀"],
- ["생성형 인공지능, 대화형 인공지능 챗봇","챗GPT 챗지피티 ChatGPT 제미나이 뤼튼 퍼플렉시티 Perplexity Copilot 코파일럿"]
+ ["대화형 인공지능, 생성형 인공지능, 대화형 인공지능 챗봇","챗GPT 챗지피티 ChatGPT 제미나이 뤼튼 퍼플렉시티 Perplexity Copilot 코파일럿 하이퍼클로버X 빙챗 Bing Chat"],
+ ["가상화폐","비트코인 Bitcoin 알트코인 Altcoin"],
+ ["온라인 강연회","TED"]
 ];
 /* '참고'로만 두는 이름: 일반 단어나 사람 이름과 겹치는 경우 */
 const ALT_SOFT=[
  ["스프레드시트","엑셀 Excel"],
- ["소셜네트워크서비스(SNS), 메신저","LINE Meta"],
- ["온라인 협업 도구","Allo"],
- ["생성형 인공지능","클로드 Claude Gemini"]
+ ["소셜네트워크서비스, 소셜네트워크서비스(SNS), 메신저","LINE Meta"],
+ ["협업 플랫폼, 온라인 협업 플랫폼, 온라인 협업 도구","Allo"],
+ ["대화형 인공지능, 생성형 인공지능","클로드 Claude Gemini 바드 Bard"],
+ ["온라인 강연회","테드"]
 ];
 /* 영문 표기에 붙이는 대체 예 (B3) */
-const ALT_B3={HTML:"웹 페이지 제작 언어",CSS:"스타일 시트 언어",VR:"가상현실",AR:"증강현실",KTX:"고속 열차",SRT:"고속 열차",MBTI:"성격유형 검사",IAEA:"국제기구"};
+const ALT_B3={HTML:"하이퍼텍스트 마크업 언어, 웹 페이지 제작 언어",CSS:"스타일 시트 언어",VR:"가상현실",AR:"증강현실",KTX:"초고속 열차, 고속 열차",SRT:"초고속 열차, 고속 열차",MBTI:"성격유형 검사",IAEA:"국제기구"};
 const ALT={};const splitNames=str=>{const out=[];const multi=str.match(/[A-Za-z가-힣]+(?: [A-Za-z가-힣+]+)*/g)||[];return multi};
 function parseNames(str){
   /* 공백이 든 이름(구글 클래스룸, Google Docs 등)을 먼저 뽑고 나머지는 공백으로 나눔 */
-  const known=["구글 클래스룸","Google Classroom","EBS 온라인클래스","구글 문서","구글 독스","Google Docs","Google TV","프리미어 프로","Premiere Pro","파이널 컷","Final Cut Pro","페인트샵 프로","Gather Town","갤럭시 탭","Galaxy Tab","MS 워드","MS Word","구글 미트","Google Meet","구글 설문","Google Forms"];
+  const known=["구글 클래스룸","Google Classroom","EBS 온라인클래스","구글 문서","구글 독스","Google Docs","Google TV","프리미어 프로","Premiere Pro","파이널 컷","Final Cut Pro","페인트샵 프로","Gather Town","갤럭시 탭","Galaxy Tab","MS 워드","MS Word","구글 미트","Google Meet","구글 설문","Google Forms","Bing Chat"];
   let rest=" "+str+" ";const out=[];
   for(const k of known){if(rest.includes(" "+k+" ")){out.push(k);rest=rest.split(" "+k+" ").join(" ")}}
   return out.concat(rest.trim().split(/\s+/).filter(Boolean));
@@ -538,7 +542,7 @@ const EDU_HARD=[],EDU_SOFT=[];
 for(const [alt,str] of ALT_GROUPS)for(const n of parseNames(str)){ALT[n]=alt;EDU_HARD.push(n)}
 for(const [alt,str] of ALT_SOFT)for(const n of parseNames(str)){ALT[n]=alt;EDU_SOFT.push(n)}
 /* 기존 사전 이름에도 대체 예를 붙임 */
-Object.assign(ALT,{"애플":"","카카오":"메신저·포털 서비스","쿠팡":"온라인 쇼핑몰","배달의민족":"배달 앱","챗GPT":"생성형 인공지능, 대화형 인공지능 챗봇","오픈AI":"","OpenAI":""});
+Object.assign(ALT,{"애플":"","카카오":"메신저, 메신저 서비스, 포털 서비스","쿠팡":"온라인 쇼핑몰","배달의민족":"배달 앱","챗GPT":"대화형 인공지능, 생성형 인공지능, 대화형 인공지능 챗봇","오픈AI":"","OpenAI":""});
 for(const k of Object.keys(ALT))if(!ALT[k])delete ALT[k];
 for(const n of ORG_INT)ALT[n]=ALT[n]||"국제기구";
 const bound=list=>{const ko=[],en=[];for(const n of list)(/^[A-Za-z]/.test(n)?en:ko).push(n);
