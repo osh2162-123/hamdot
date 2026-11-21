@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:light;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>함닷</title>
 <script src="lib/jszip.min.js"></script>
 <style>
@@ -17,9 +17,9 @@
   --paper:#f3f5f7; --sheet:#ffffff; --ink:#1e2329; --muted:#6b7480; --line:#e4e8ec; --soft:#eef1f4;
   --accent:#03c75a; --accent-fill:#00a050; --accent-text:#00873f; --accent-wash:#e7f8ef; --accent-ink:#ffffff;
   --err:#d93a2f; --warn:#a36200; --info:#2f63a8;
-  --err-bg:rgba(217,58,47,.13); --warn-bg:rgba(230,160,20,.22); --info-bg:rgba(47,99,168,.12);
+  --err-bg:rgba(217,58,47,.10); --warn-bg:rgba(230,160,20,.18); --info-bg:rgba(47,99,168,.10);
   --c1:#d93a2f; --c2:#00873f; --c3:#7b5cc4;
-  --shadow:0 1px 2px rgba(20,30,40,.04),0 2px 8px rgba(20,30,40,.04);
+  --shadow:0 1px 2px rgba(20,30,40,.04),0 8px 24px rgba(20,30,40,.06);
   --f-sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   /* 글자 크기: 대주제일수록 크고 굵게 */
   --fs-1:24px; --fs-2:18px; --fs-3:15px; --fs-4:15px; --fs-5:13.5px; --fs-6:12.5px;
@@ -28,28 +28,14 @@
   --hair:rgba(30,35,41,.06);
   --ease:cubic-bezier(.16,1,.3,1); --dur:.22s; --dur-l:.35s;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
-  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
-  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
-  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
-  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
-  --hair:rgba(255,255,255,.06);
-  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
-  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
-  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
-  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
-  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
-  --hair:rgba(255,255,255,.06);
-  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+
+
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-sans);font-size:var(--fs-4);line-height:1.55;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;word-break:keep-all}
 *{box-sizing:border-box}
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.app{height:100%;display:flex;flex-direction:column;gap:12px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app{min-height:100%;display:flex;flex-direction:column;gap:12px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .num,.big,.stat b,.scale,.diag dd,.nums button,.findings .id{font-variant-numeric:tabular-nums}
 
 /* 1단계: 앱 제목 */
@@ -66,7 +52,7 @@ button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 .sheet-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--hair)}
 .sheet-head h2{font-size:var(--fs-2);font-weight:var(--fw-2);margin:0;letter-spacing:-.02em}
 .tally{display:flex;gap:6px;flex-wrap:wrap}
-.pill{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-6);font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:var(--fs-6);font-weight:500;padding:2px 9px;border-radius:999px;white-space:nowrap}
 .pill.err{background:var(--err-bg);color:var(--err)}
 .pill.warn{background:var(--warn-bg);color:var(--warn)}
 .pill.info{background:var(--info-bg);color:var(--info)}
@@ -108,14 +94,14 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .panel-body{flex:1;min-height:0;overflow:auto;padding:14px 18px}
 
 /* 입력 원고: 네이버 검색창처럼 초록 테두리의 둥근 창 */
-.editor .panel-body{display:flex;flex-direction:column;gap:12px;overflow:hidden}
+.editor .panel-body{display:flex;flex-direction:column;gap:12px;overflow:visible}
 .field{position:relative;flex:1;min-height:180px;border:2px solid var(--accent);border-radius:24px;background:var(--sheet);overflow:hidden;box-shadow:0 4px 16px rgba(3,199,90,.10);transition:box-shadow .15s}
 .field:focus-within{box-shadow:0 0 0 4px rgba(3,199,90,.14),0 4px 16px rgba(3,199,90,.12)}
 .field textarea,.field .backdrop{position:absolute;inset:0;margin:0;border:0;padding:18px 22px;font-family:var(--f-sans);font-size:16px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:keep-all;letter-spacing:-.01em}
 .field .backdrop{color:transparent;overflow:auto;pointer-events:none;scrollbar-width:none}
 .field .backdrop::-webkit-scrollbar{display:none}
 .field textarea{background:transparent;resize:none;width:100%;height:100%;overflow:auto;color:var(--ink);outline:none}
-.backdrop mark{color:transparent;border-radius:3px}
+.backdrop mark{color:transparent;border-radius:4px}
 .backdrop mark.err{background:var(--err-bg);box-shadow:inset 0 -2px 0 var(--err)}
 .backdrop mark.warn{background:var(--warn-bg);box-shadow:inset 0 -2px 0 var(--warn)}
 .backdrop mark.info{background:var(--info-bg)}
@@ -229,6 +215,14 @@ button,a.ghost,.chip,.findings tr.row,.findings tr.row td{transition:background-
 button:active,a.ghost:active{transform:scale(.97)}
 @media (prefers-reduced-motion:reduce){button,a.ghost,.chip,.findings tr.row,.findings tr.row td,.settings-panel,#diag,.bar i,.field{transition:none!important;transform:none!important}}
 
+#byteMethod p{margin:6px 0}#byteMethod summary{cursor:pointer}
+.finding-group{padding:4px 0}.group-toggle{border:0;background:transparent;padding:6px 16px;min-height:32px;cursor:pointer;font-weight:600;color:var(--ink)}
+.finding-tip{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:10px 12px;background:var(--soft);border-radius:12px;font-size:var(--fs-5);flex:none}
+.finding-tip strong{font-weight:500}.finding-tip>span{color:var(--muted)}
+.no-findings::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
+.sheet-head,.findings th{background:var(--sheet)}
+@supports(backdrop-filter:blur(8px)){.sheet-head,.findings th{background:rgba(255,255,255,.85);backdrop-filter:blur(8px)}}
+
 </style>
 </head>
 <body>
@@ -330,6 +324,7 @@ button:active,a.ghost:active{transform:scale(.97)}
             <span id="tplChips" style="display:contents"></span>
             <span class="tpl-hint" id="tplHint">틀을 누르면 커서 위치에 들어갑니다. 〔 〕 빈칸은 Tab으로 다음 칸, Shift+Tab으로 이전 칸으로 이동하며 바로 덮어쓸 수 있습니다. 서술어와 연결어는 관찰한 활동 수준에 맞게 직접 쓰세요.</span>
           </div>
+          <div id="findingTip" class="finding-tip" role="region" aria-label="현재 점검 항목" hidden></div>
           <div class="field">
             <div class="backdrop" id="backdrop" aria-hidden="true"></div>
             <textarea id="src" spellcheck="false" aria-label="세특 문장 입력" placeholder="세특을 붙여 넣거나, 위의 패턴 틀로 시작하세요."></textarea>
@@ -360,7 +355,7 @@ button:active,a.ghost:active{transform:scale(.97)}
               </div>
               <small>글자 수가 넘친다고 다른 영역으로 옮겨 쓰지 않음(요령 p.28)</small>
               <span class="sp"></span>
-              <span>계산식: 한글 등 3Byte, 그 외 1Byte, 엔터 1Byte (엑셀 =(LENB−LEN)*3+(LEN*2−LENB)과 같음, 기재요령 p.208). NEIS가 자동으로 붙이는 과목명·(학기)는 1,500Byte에 들어가지 않음 (NEIS 매뉴얼Ⅰ p.514)</span>
+              <details id="byteMethod"><summary>바이트 계산 방식</summary><p>계산식: 한글 등 3Byte, 그 외 1Byte, 엔터 1Byte (엑셀 =(LENB−LEN)*3+(LEN*2−LENB)과 같음, 기재요령 p.208). NEIS가 자동으로 붙이는 과목명·(학기)는 1,500Byte에 들어가지 않음 (NEIS 매뉴얼Ⅰ p.514)</p></details>
             </div>
           </div>
         </div>
@@ -684,16 +679,59 @@ function paintBackdrop(t,F){
   out+=esc(t.slice(pos))+"\n ";
   el.bd.innerHTML=out;syncBackdrop();
 }
+let cursorFindings=[],activeFinding=-1,dismissedSelection="";
+let foldState={};try{const value=JSON.parse(store.get("setuk-fold")||"{}");if(value&&typeof value==="object")foldState=value}catch(_){}
 function renderFindings(F){
+  cursorFindings=F.filter(f=>f.start>=0&&f.end>f.start).sort((a,b)=>a.start-b.start||ORDER[a.sev]-ORDER[b.sev]||a.end-b.end);
+  activeFinding=-1;
+  dismissedSelection="";
   const groups=new Map();
   for(const f of F){const k=f.id+"|"+f.name+"|"+f.hit;if(!groups.has(k))groups.set(k,{...f,count:0});groups.get(k).count++}
   const rows=[...groups.values()].sort((a,b)=>ORDER[a.sev]-ORDER[b.sev]||a.id.localeCompare(b.id,undefined,{numeric:true}));
   const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
-  el.tally.innerHTML=(F.length?["err","warn","info"].filter(k=>c[k]).map(k=>`<span class="pill ${k}">${SEV[k]} ${c[k]}</span>`).join(""):'<span class="pill ok">걸린 항목 없음</span>');
+  el.tally.innerHTML=F.length?["err","warn","info"].filter(k=>c[k]).map(k=>`<span class="pill ${k}">${SEV[k]} ${c[k]}</span>`).join(""):'<span class="pill ok">걸린 항목 없음</span>';
   $("sheetBody").classList.toggle("empty-one",!rows.length&&view==="one");
-  if(!rows.length){el.find.innerHTML='<span class="empty-note">걸린 항목 없음</span>';return}
-  el.find.innerHTML='<table><thead><tr><th>구분</th><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>'+rows.map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="pill ${r.sev}">${SEV[r.sev]}</span></td><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}${r.alt?`<div class="alt">대체 예: ${esc(r.alt)}</div>`:""}</td><td class="src">${esc(r.src)}</td></tr>`).join("")+"</tbody></table>";
+  if(!rows.length){el.find.innerHTML='<span class="empty-note no-findings">걸린 항목 없음</span>';$("findingTip").hidden=true;return}
+  el.find.innerHTML=["err","warn","info"].filter(k=>c[k]).map(k=>{
+    const open=typeof foldState[k]==="boolean"?foldState[k]:k==="err"||k==="warn"&&!c.err;
+    const body=rows.filter(r=>r.sev===k).map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}${r.alt?`<div class="alt">대체 예: ${esc(r.alt)}</div>`:""}</td><td class="src">${esc(r.src)}</td></tr>`).join("");
+    return `<section class="finding-group" data-severity="${k}"><button class="group-toggle" aria-expanded="${open}" aria-controls="group-${k}" data-fold="${k}">${open?"▾":"▸"} ${SEV[k]} ${c[k]}</button><div id="group-${k}"${open?"":" hidden"}><table><thead><tr><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>${body}</tbody></table></div></section>`;
+  }).join("");
+  showCursorFinding();
 }
+el.find.addEventListener("click",event=>{
+  const button=event.target.closest("button[data-fold]");if(!button)return;
+  const key=button.dataset.fold,open=button.getAttribute("aria-expanded")!=="true";
+  foldState[key]=open;store.set("setuk-fold",JSON.stringify(foldState));
+  button.setAttribute("aria-expanded",String(open));button.textContent=(open?"▾":"▸")+button.textContent.slice(1);
+  $(button.getAttribute("aria-controls")).hidden=!open;
+});
+function showCursorFinding(){
+  const tip=$("findingTip"),position=el.src.selectionStart;
+  if(dismissedSelection===`${position}:${el.src.selectionEnd}`){tip.hidden=true;return}
+  if(document.activeElement!==el.src){tip.hidden=true;return}
+  if(activeFinding<0||!cursorFindings[activeFinding]||position<cursorFindings[activeFinding].start||position>=cursorFindings[activeFinding].end)activeFinding=cursorFindings.findIndex(f=>position>=f.start&&position<f.end);
+  const f=cursorFindings[activeFinding];if(!f){tip.hidden=true;return}
+  const same=cursorFindings.filter(x=>x.start<=position&&position<x.end).length;
+  tip.innerHTML=`<span class="pill ${f.sev}">${SEV[f.sev]}</span><strong>${esc(f.name)}</strong><span>${esc(f.src)}</span>${f.alt?`<span>대체 예: ${esc(f.alt)}</span>`:""}<span>${activeFinding+1}/${cursorFindings.length}${same>1?" · 같은 곳 "+same+"건":""}</span><button class="ghost" data-direction="-1">이전</button><button class="ghost" data-direction="1">다음</button>`;
+  tip.hidden=false;
+}
+function moveCursorFinding(direction){
+  if(!cursorFindings.length)return;
+  dismissedSelection="";
+  if(activeFinding<0){const position=el.src.selectionStart;activeFinding=direction>0?cursorFindings.findIndex(f=>f.start>position):cursorFindings.findLastIndex(f=>f.start<position);if(activeFinding<0)activeFinding=direction>0?0:cursorFindings.length-1}
+  else activeFinding=(activeFinding+direction+cursorFindings.length)%cursorFindings.length;
+  const f=cursorFindings[activeFinding];el.src.focus();el.src.setSelectionRange(f.start,f.end);showCursorFinding();
+}
+$("findingTip").addEventListener("mousedown",event=>{if(event.target.closest("button"))event.preventDefault()});
+$("findingTip").addEventListener("click",event=>{const button=event.target.closest("button[data-direction]");if(button)moveCursorFinding(+button.dataset.direction)});
+el.src.addEventListener("click",()=>{activeFinding=-1;dismissedSelection="";showCursorFinding()});
+el.src.addEventListener("keyup",event=>{if(event.key!=="Escape")showCursorFinding()});
+document.addEventListener("selectionchange",showCursorFinding);
+el.src.addEventListener("keydown",event=>{
+  if(event.key==="Escape"){dismissedSelection=`${el.src.selectionStart}:${el.src.selectionEnd}`;$("findingTip").hidden=true;return}
+  if(event.altKey&&(event.key==="ArrowDown"||event.key==="ArrowUp")){event.preventDefault();moveCursorFinding(event.key==="ArrowDown"?1:-1)}
+});
 function renderMeter(t){
   const {b,m,s,n}=byteOf(t);
   const L=LIM();

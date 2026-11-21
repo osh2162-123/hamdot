@@ -9,13 +9,13 @@
 @font-face{font-family:"Pretendard";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Medium.subset.woff2") format("woff2")}
 @font-face{font-family:"Pretendard";font-weight:600;font-style:normal;font-display:swap;src:url("fonts/Pretendard-SemiBold.subset.woff2") format("woff2")}
 @font-face{font-family:"Pretendard";font-weight:700;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Bold.subset.woff2") format("woff2")}
-:root{
+:root{color-scheme:light;
   --paper:#f3f5f7; --sheet:#ffffff; --ink:#1e2329; --muted:#6b7480; --line:#e4e8ec; --soft:#eef1f4;
   --accent:#03c75a; --accent-fill:#00a050; --accent-text:#00873f; --accent-wash:#e7f8ef; --accent-ink:#ffffff;
   --err:#d93a2f; --warn:#a36200; --info:#2f63a8;
   --err-bg:rgba(217,58,47,.13); --warn-bg:rgba(230,160,20,.22); --info-bg:rgba(47,99,168,.12);
   --c1:#d93a2f; --c2:#00873f; --c3:#7b5cc4;
-  --shadow:0 1px 2px rgba(20,30,40,.04),0 2px 8px rgba(20,30,40,.04);
+  --shadow:0 1px 2px rgba(20,30,40,.04),0 8px 24px rgba(20,30,40,.06);
   --f-sans:"Pretendard","Pretendard Variable",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   /* 글자 크기: 대주제일수록 크고 굵게 */
   --fs-1:24px; --fs-2:18px; --fs-3:15px; --fs-4:15px; --fs-5:13.5px; --fs-6:12.5px;
@@ -24,22 +24,8 @@
   --hair:rgba(30,35,41,.06);
   --ease:cubic-bezier(.16,1,.3,1); --dur:.22s; --dur-l:.35s;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
-  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
-  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
-  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
-  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
-  --hair:rgba(255,255,255,.06);
-  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --paper:#111315; --sheet:#1a1d20; --ink:#e8ebee; --muted:#9aa3ac; --line:#2a2f34; --soft:#22262a;
-  --accent:#03c75a; --accent-fill:#00a050; --accent-text:#45d98d; --accent-wash:rgba(3,199,90,.14); --accent-ink:#ffffff;
-  --err:#ff7a6e; --warn:#e8b24f; --info:#8fb6e8;
-  --err-bg:rgba(255,122,110,.2); --warn-bg:rgba(232,178,79,.22); --info-bg:rgba(143,182,232,.18);
-  --c1:#ff7a6e; --c2:#45d98d; --c3:#b9a0ef;
-  --hair:rgba(255,255,255,.06);
-  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+
+
 html,body{height:100%}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-sans);font-size:var(--fs-4);line-height:1.55;letter-spacing:-.01em;-webkit-font-smoothing:antialiased;word-break:keep-all}
 *{box-sizing:border-box}
