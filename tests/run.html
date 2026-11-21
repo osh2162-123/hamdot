@@ -42,6 +42,7 @@ async function run(){
     let passed=0,failed=0,known=0;
     for(const item of cases){
       app.setArea(item.mode);
+      app.document.getElementById("hope").value=item.hope||"";
       const findings=app.scan(item.text);
       const actual=[...new Set(findings.map(f=>f.id))];
       const altChecks=Object.entries(item.alt||{});
