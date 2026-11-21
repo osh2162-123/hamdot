@@ -97,7 +97,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .editor .panel-body{display:flex;flex-direction:column;gap:12px;overflow:visible}
 .field{position:relative;flex:1;min-height:180px;border:2px solid var(--accent);border-radius:24px;background:var(--sheet);overflow:hidden;box-shadow:0 4px 16px rgba(3,199,90,.10);transition:box-shadow .15s}
 .field:focus-within{box-shadow:0 0 0 4px rgba(3,199,90,.14),0 4px 16px rgba(3,199,90,.12)}
-.field textarea,.field .backdrop{position:absolute;inset:0;margin:0;border:0;padding:18px 22px;font-family:var(--f-sans);font-size:16px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:keep-all;letter-spacing:-.01em}
+.field textarea,.field .backdrop{position:absolute;inset:0;margin:0;border:0;padding:64px 22px 18px;font-family:var(--f-sans);font-size:16px;line-height:1.75;white-space:pre-wrap;overflow-wrap:break-word;word-break:keep-all;letter-spacing:-.01em}
 .field .backdrop{color:transparent;overflow:auto;pointer-events:none;scrollbar-width:none}
 .field .backdrop::-webkit-scrollbar{display:none}
 .field textarea{background:transparent;resize:none;width:100%;height:100%;overflow:auto;color:var(--ink);outline:none}
@@ -105,9 +105,9 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .backdrop mark.err{background:var(--err-bg);box-shadow:inset 0 -2px 0 var(--err)}
 .backdrop mark.warn{background:var(--warn-bg);box-shadow:inset 0 -2px 0 var(--warn)}
 .backdrop mark.info{background:var(--info-bg)}
-.meter{display:flex;flex-direction:column;gap:7px;flex:none;padding:0 4px}
+.meter{display:flex;flex-direction:column;gap:4px;flex:none;padding:0 4px}
 .meter-nums{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
-.big{font-size:28px;font-weight:700;letter-spacing:-.03em}
+.big{font-size:24px;font-weight:700;letter-spacing:-.03em}
 .big small{font-size:var(--fs-4);color:var(--muted);font-weight:500}
 .big.over{color:var(--err)}
 .stat{font-size:var(--fs-5);color:var(--muted)}
@@ -223,6 +223,46 @@ button:active,a.ghost:active{transform:scale(.97)}
 .sheet-head,.findings th{background:var(--sheet)}
 @supports(backdrop-filter:blur(8px)){.sheet-head,.findings th{background:rgba(255,255,255,.85);backdrop-filter:blur(8px)}}
 
+.finding-tip{position:absolute;top:0;left:0;right:0;z-index:2;height:48px;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;padding:8px 10px;background:rgba(255,255,255,.9);border-radius:0;border-bottom:1px solid var(--hair)}
+.finding-tip strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.finding-tip>span{max-width:14em;overflow:hidden;text-overflow:ellipsis}
+.finding-tip .pill,.finding-tip button{flex:none}
+#diag{max-height:8em;overflow:auto}
+#byteMethod p{max-height:8em;overflow:auto}
+@media(min-width:861px) and (min-height:600px){
+  html,body{height:100%;overflow:hidden}
+  .app{height:100vh;height:100dvh;min-height:0;overflow:hidden;gap:8px;padding-block:10px}
+  .top{gap:6px}
+  .brand{gap:6px 12px}
+  .brand p{max-width:34em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .classinfo{max-width:20em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sheet{display:flex;flex-direction:column;min-height:0;max-height:30vh}
+  .sheet-head{flex:none;padding:6px 12px}
+  .sheet-body{min-height:0;max-height:none;overflow:auto}
+  .main,.stage,.editor{min-height:0}
+  .editor{height:100%}
+  .editor .panel-head{padding:6px 12px;flex:none}
+  .editor .panel-head .sub{min-width:0;max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .editor .panel-body{min-height:0;overflow:hidden;padding:8px 12px;gap:6px}
+  .field{flex:1 0 160px;min-height:160px}
+  .tpl,.roster{flex:0 1 auto;min-height:24px;max-height:64px;overflow:auto}
+  .roster .nums{flex:none}
+  .meter{flex:none;gap:4px;display:grid;grid-template-columns:minmax(0,1fr) auto}
+  .meter-nums,.bar,.meter-foot{grid-column:1/-1}
+  .meter-nums{gap:4px 12px}
+  .meter-foot{gap:4px 8px}
+  .meter-foot .sp{display:none}
+  .meter-foot>small{font-size:var(--fs-6)}
+  .meter-foot .modes{flex:none}
+  .meter-foot input{padding-block:2px}
+  #diagDetails{align-self:start}
+}
+@media(max-width:860px),(max-height:599px){
+  html,body{height:auto;overflow:auto}
+  .app{height:auto;min-height:100vh;overflow:visible}
+  .editor .panel-body{overflow:visible}
+}
+
 </style>
 </head>
 <body>
@@ -230,7 +270,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.5.1</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6</small></h1>
       <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
       <div class="settings-wrap">
         <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
@@ -324,8 +364,8 @@ button:active,a.ghost:active{transform:scale(.97)}
             <span id="tplChips" style="display:contents"></span>
             <span class="tpl-hint" id="tplHint">틀을 누르면 커서 위치에 들어갑니다. 〔 〕 빈칸은 Tab으로 다음 칸, Shift+Tab으로 이전 칸으로 이동하며 바로 덮어쓸 수 있습니다. 서술어와 연결어는 관찰한 활동 수준에 맞게 직접 쓰세요.</span>
           </div>
-          <div id="findingTip" class="finding-tip" role="region" aria-label="현재 점검 항목" hidden></div>
           <div class="field">
+            <div id="findingTip" class="finding-tip" role="region" aria-label="현재 점검 항목" hidden></div>
             <div class="backdrop" id="backdrop" aria-hidden="true"></div>
             <textarea id="src" spellcheck="false" aria-label="세특 문장 입력" placeholder="세특을 붙여 넣거나, 위의 패턴 틀로 시작하세요."></textarea>
           </div>
@@ -370,7 +410,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.5.1"; // 2026-11-21
+const APP_VERSION="1.6"; // 2026-11-21
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -714,6 +754,7 @@ function showCursorFinding(){
   const f=cursorFindings[activeFinding];if(!f){tip.hidden=true;return}
   const same=cursorFindings.filter(x=>x.start<=position&&position<x.end).length;
   tip.innerHTML=`<span class="pill ${f.sev}">${SEV[f.sev]}</span><strong>${esc(f.name)}</strong><span>${esc(f.src)}</span>${f.alt?`<span>대체 예: ${esc(f.alt)}</span>`:""}<span>${activeFinding+1}/${cursorFindings.length}${same>1?" · 같은 곳 "+same+"건":""}</span><button class="ghost" data-direction="-1">이전</button><button class="ghost" data-direction="1">다음</button>`;
+  tip.querySelectorAll("strong,span").forEach(node=>node.title=node.textContent);
   tip.hidden=false;
 }
 function moveCursorFinding(direction){
