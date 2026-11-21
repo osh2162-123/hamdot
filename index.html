@@ -7,7 +7,7 @@
 <title>함닷</title>
 <script src="lib/jszip.min.js"></script>
 <style>
-/* Layout: 상단 필터 시트 / 가운데 입력 원고 / 좌우 가장자리 탭으로 사례집·패턴 패널을 펼치는 세특 작성 도구 함닷(HAMDOT).
+/* Layout: 상단 필터 시트와 입력 원고. 참고 자료는 별도 페이지에서 제공하는 함닷(HAMDOT).
    네이버 첫 화면을 참고: 회백색 바탕, 흰 둥근 카드, 초록 테두리의 둥근 입력창. 글꼴은 Pretendard 1.3.9 (SIL OFL 1.1). */
 @font-face{font-family:"Pretendard";font-weight:400;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Regular.subset.woff2") format("woff2")}
 @font-face{font-family:"Pretendard";font-weight:500;font-style:normal;font-display:swap;src:url("fonts/Pretendard-Medium.subset.woff2") format("woff2")}
@@ -46,7 +46,7 @@ body{background:var(--paper);color:var(--ink);font-family:var(--f-sans);font-siz
 button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .app{height:100%;display:flex;flex-direction:column;gap:12px;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.num,.big,.stat b,.scale,.meta,.diag dd,.rank .n,.nums button,.findings .id{font-variant-numeric:tabular-nums}
+.num,.big,.stat b,.scale,.diag dd,.nums button,.findings .id{font-variant-numeric:tabular-nums}
 
 /* 1단계: 앱 제목 */
 .top{display:flex;flex-direction:column;gap:10px;flex:none}
@@ -80,7 +80,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .tabs{display:flex;gap:2px;background:var(--soft);border-radius:var(--r-ctl);padding:3px}
 .tabs button{border:0;background:transparent;border-radius:var(--r-ctl);padding:4px 14px;font-size:var(--fs-5);cursor:pointer;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--sheet);color:var(--ink);font-weight:600;box-shadow:var(--shadow)}
-.findings{max-height:min(26vh,220px);overflow:auto}
+.findings{overflow:visible}
 .findings table{width:100%;border-collapse:collapse;font-size:var(--fs-5)}
 .findings th{position:sticky;top:0;background:var(--sheet);text-align:left;font-weight:600;color:var(--muted);font-size:var(--fs-6);padding:7px 16px;border-bottom:1px solid var(--line)}
 .findings td{padding:7px 16px;border-bottom:1px solid var(--soft);vertical-align:top}
@@ -95,15 +95,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 
 /* 작업 영역 */
 .main{flex:1;min-height:0;display:flex;gap:10px}
-.rail{flex:none;width:44px;border:1px solid var(--line);background:var(--sheet);border-radius:var(--r-card);box-shadow:var(--shadow);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:12px 0}
-.rail span{writing-mode:vertical-rl;font-weight:600;font-size:var(--fs-5);letter-spacing:.14em;color:var(--muted)}
-.rail[aria-pressed="true"]{background:var(--accent-fill);border-color:var(--accent-fill)}
-.rail[aria-pressed="true"] span{color:var(--accent-ink)}
-.rail:hover span{color:var(--accent-text)}
-.rail[aria-pressed="true"]:hover span{color:var(--accent-ink)}
 .stage{flex:1;min-width:0;display:grid;gap:10px;grid-template-columns:minmax(0,1fr)}
-.stage.l,.stage.r{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.stage.lr{grid-template-columns:minmax(0,1.1fr) minmax(0,.8fr) minmax(0,1.1fr)}
 .panel{min-height:0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 /* 2단계: 패널 제목 */
 .panel-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line)}
@@ -112,7 +104,6 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .panel-body{flex:1;min-height:0;overflow:auto;padding:14px 18px}
 
 /* 입력 원고: 네이버 검색창처럼 초록 테두리의 둥근 창 */
-.stage:not(.l):not(.r):not(.lr) .editor{width:100%;max-width:900px;justify-self:center}
 .editor .panel-body{display:flex;flex-direction:column;gap:12px;overflow:hidden}
 .field{position:relative;flex:1;min-height:180px;border:2px solid var(--accent);border-radius:24px;background:var(--sheet);overflow:hidden;box-shadow:0 4px 16px rgba(3,199,90,.10);transition:box-shadow .15s}
 .field:focus-within{box-shadow:0 0 0 4px rgba(3,199,90,.14),0 4px 16px rgba(3,199,90,.12)}
@@ -193,71 +184,38 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .fix del{color:var(--err);text-decoration:line-through}
 .fix ins{color:var(--accent-text);text-decoration:none;font-weight:600}
 
-/* 사례집 */
-.filters{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--sheet)}
-.filters select{padding:5px 12px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--paper);font-size:var(--fs-5)}
-.note{font-size:var(--fs-5);color:var(--muted);background:var(--soft);border-radius:12px;padding:10px 14px;margin:0 0 12px}
-.cases{display:flex;flex-direction:column;gap:10px}
-.case{border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;gap:6px;background:var(--sheet)}
-.case:hover{border-color:var(--accent)}
-.case-top{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
-.case-top strong{font-size:var(--fs-4);font-weight:600}
-.case-top .meta{font-size:var(--fs-6);color:var(--muted)}
-.case-top a{margin-left:auto;font-size:var(--fs-5);font-weight:600;color:var(--accent-text);text-decoration:none;white-space:nowrap}
-.case-top a:hover{text-decoration:underline}
-.chips{display:flex;gap:4px;flex-wrap:wrap}
-.chip{font-size:var(--fs-6);padding:0 8px;border-radius:999px;background:var(--soft);color:var(--muted);line-height:20px}
-.chip.subj{background:var(--accent-wash);color:var(--accent-text);font-weight:600}
-.chip.judge{background:var(--warn-bg);color:var(--warn)}
-.flow{font-size:var(--fs-5);color:var(--ink)}
-.flow .arr{color:var(--muted);padding:0 3px}
-.more{margin-top:10px}
-
 /* 패턴 */
-.sec{display:grid;gap:8px;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--soft)}
-.sec:last-child{border-bottom:0}
 /* 3단계: 섹션 제목 */
-.sec h4{margin:0;font-size:var(--fs-3);font-weight:var(--fw-3)}
-.sec p{margin:0;font-size:var(--fs-5);color:var(--muted)}
 .diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
 .diag div{background:var(--soft);border-radius:12px;padding:9px 12px}
 .diag dt{font-size:var(--fs-6);color:var(--muted)}
 .diag dd{margin:0;font-size:20px;font-weight:700}
 .diag dd small{font-size:var(--fs-6);color:var(--muted);font-weight:400}
 .myflow{font-size:var(--fs-5)}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:var(--fs-6);color:var(--muted)}
-.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
-svg.chart{width:100%;height:auto;display:block}
-svg.chart text{fill:var(--muted);font-family:var(--f-sans);font-size:9px}
-svg.chart .grid{stroke:var(--line);stroke-width:1}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rank{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:var(--fs-5)}
-.rank li{display:flex;align-items:center;gap:6px}
-.rank .w{width:5.5em;flex:none}
-.rank .b{height:7px;border-radius:4px;background:var(--accent)}
-.rank .n{font-size:var(--fs-6);color:var(--muted)}
-.rank.alt .b{background:var(--warn)}
-.colh{font-size:var(--fs-6);color:var(--muted);margin-bottom:4px;font-weight:600}
-.steps{margin:0;padding-left:18px;font-size:var(--fs-5);display:grid;gap:4px}
-.steps b{font-weight:600}
-.cite{font-size:var(--fs-6);color:var(--muted)}
 
 @media (max-width:860px){
   html,body{height:auto}
   .app{height:auto}
   .main{flex-direction:column}
   .stage{order:1}
-  .rails{display:flex;gap:8px}
-  .rail{width:auto;flex:1;padding:10px}
-  .rail span{writing-mode:horizontal-tb;letter-spacing:.02em}
-  .stage,.stage.l,.stage.r,.stage.lr{grid-template-columns:minmax(0,1fr)}
-  .cases-panel .panel-body,.pat-panel .panel-body{max-height:70vh}
   .field{min-height:300px}
-  .cols{grid-template-columns:1fr}
   .brand h1{font-size:21px}
 }
-@media (min-width:861px){.rails{display:contents}}
 @media (prefers-reduced-motion:reduce){.bar i,.field{transition:none}}
+.stage .editor{width:100%;max-width:900px;justify-self:center}
+.sheet-body{max-height:40vh;overflow:auto}
+.sheet-body>.empty-note{margin:0}
+.sheet-body.empty-one{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;padding:6px 16px}
+.sheet-body.empty-one .empty-note{padding:0;margin:0}
+.settings-wrap{position:relative;display:inline-flex;align-items:center;gap:5px}
+.settings-dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.settings-panel{position:absolute;right:0;top:calc(100% + 8px);z-index:20;width:min(440px,calc(100vw - 32px));max-height:calc(100vh - 100px);overflow:auto;padding:16px;background:var(--sheet);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);display:grid;gap:12px}
+.settings-panel .blk{align-items:flex-start;flex-wrap:wrap}
+.settings-panel .blk input{max-width:100%;width:100%}
+.settings-panel .classbar{margin:0}
+#diagDetails{font-size:var(--fs-5);color:var(--muted)}
+#diagSummary{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -266,18 +224,32 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
   <header class="top">
     <div class="brand">
       <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.5.1</small></h1>
+      <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
+      <div class="settings-wrap">
+        <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
+        <span id="settingsDot" class="settings-dot" title="학교 식별어를 넣으면 학교명도 점검합니다"></span>
+        <div id="settingsPanel" class="settings-panel" hidden>
+        <label class="blk" for="blocked">학교 식별어
+          <input id="blocked" type="text" placeholder="학교명, 약칭, 축제명, 지역명 (쉼표로 구분)">
+          <small>동아리명에 붙은 학교 약칭도 넣으세요</small>
+        </label>
+        <label class="blk" for="orgs">기관·상호 추가
+          <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)">
+        </label>
+      <div class="classbar">
+        <label><input id="persistDrafts" type="checkbox"> 이 기기에 계속 저장</label>
+        <span>기본은 이 탭에서만 유지합니다. 공용 컴퓨터에서는 켜지 마세요.</span>
+        <button class="ghost" id="eraseDrafts">저장 내용 지우기</button>
+        <span id="storageStatus" role="status"></span>
+      </div>
+        </div>
+      </div>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
         <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
         <label class="ghost file" for="xlsx">학급 엑셀 불러오기<input id="xlsx" type="file" accept=".xlsx" hidden></label>
         <button class="btn" id="saveX" hidden>NEIS 업로드용 엑셀 저장</button>
         <button class="ghost" id="closeX" hidden>학급 닫기</button>
-      </div>
-      <div class="classbar">
-        <label><input id="persistDrafts" type="checkbox"> 이 기기에 계속 저장</label>
-        <span>기본은 이 탭에서만 유지합니다. 공용 컴퓨터에서는 켜지 마세요.</span>
-        <button class="ghost" id="eraseDrafts">저장 내용 지우기</button>
-        <span id="storageStatus" role="status"></span>
       </div>
       <div id="legacyDrafts" hidden role="region" aria-label="이전 작업 내용">
         <p>이전 버전의 작업 내용이 이 기기에 남아 있습니다. 저장 방식을 골라 주세요.</p>
@@ -297,14 +269,8 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
         </div>
         <div class="tally" id="tally"></div>
         <span class="spacer"></span>
-        <label class="blk" for="blocked">학교 식별어
-          <input id="blocked" type="text" placeholder="학교명, 약칭, 축제명, 지역명 (쉼표로 구분)">
-          <small>동아리명에 붙은 학교 약칭도 넣으세요</small>
-        </label>
-        <label class="blk" for="orgs">기관·상호 추가
-          <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)">
-        </label>
       </div>
+      <div class="sheet-body" id="sheetBody">
       <div class="findings" id="findings"></div>
       <p class="empty-note">표시는 보조 의견입니다. 기재 여부와 교육적 판단은 교사가 정합니다. 대체 표현은 예시이며, 표시된 단어가 모두 기재 불가인 것은 아닙니다.</p>
       <div class="findings" id="classView" hidden></div>
@@ -320,36 +286,13 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
         <div class="sp-chunks" id="nvChunks"></div>
         <p class="sp-note">검사기 버튼을 누르면 지금 문장이 복사되고 새 탭이 열립니다. 붙여 넣기만 하면 됩니다. 네이버는 한 번에 300자까지만 검사되는 것으로 알려져 있어, 300자를 넘으면 문장 단위 조각 복사 버튼이 생깁니다. 국립국어원은 맞춤법 검사기를 따로 운영하지 않아 사전과 어문 규범으로 연결했습니다.</p>
       </div>
+      </div>
     </section>
   </header>
 
   <div class="main">
-    <div class="rails">
-      <button class="rail" id="btnL" aria-pressed="false" aria-controls="casesPanel"><span>아로리 사례집</span></button>
-    </div>
     <div class="stage" id="stage">
-      <section class="panel cases-panel" id="casesPanel" hidden>
-        <div class="panel-head"><h3>아로리 사례집</h3><span class="sub" id="caseCount"></span></div>
-        <div class="filters">
-          <select id="fSubj" aria-label="교과"></select>
-          <select id="fYear" aria-label="학년도"></select>
-          <select id="fTag" aria-label="구조 태그">
-            <option value="">구조 전체</option>
-            <option value="확장">확장 연결어 있음</option>
-            <option value="동기">계기 서술 있음</option>
-            <option value="방법">방법 서술 있음</option>
-            <option value="도서">도서(저자) 있음</option>
-            <option value="수치">수치 있음</option>
-            <option value="평가어">평가어 있음</option>
-            <option value="!평가어">평가어 없음</option>
-          </select>
-        </div>
-        <div class="panel-body">
-          <p class="note">서울대 아로리 '나도 입학사정관'에 실린 학생부 발췌 574문단(2019~2026학년도, 117명 전원 합격자)의 색인입니다. 원문은 서울대 입학본부 저작물이라 이 앱에 옮기지 않았고, '원문'을 누르면 해당 학생 페이지가 새 탭으로 열립니다. 교과와 구조 태그는 이 도구가 핵심어로 추정한 값입니다.</p>
-          <div class="cases" id="cases"></div>
-          <button class="ghost more" id="moreBtn" hidden>더 보기</button>
-        </div>
-      </section>
+
 
       <section class="panel editor" aria-labelledby="ed-title">
         <div class="panel-head">
@@ -390,6 +333,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
             </div>
             <div class="bar" id="bar"><i id="fill"></i></div>
             <div class="scale" id="scale"><span>0</span><span>500</span><span>1,000</span><span>1,500 Byte</span></div>
+            <details id="diagDetails" hidden><summary id="diagSummary"></summary><div id="diag"></div></details>
             <div class="meter-foot">
               <label for="goal">목표 바이트</label><input id="goal" type="number" min="0" max="1500" step="10" placeholder="예: 900">
               <span class="extra" id="extraClub" hidden><label for="club">부서명</label><input id="club" type="text" placeholder="예: 방송반"><label for="hours">이수시간</label><input id="hours" type="number" min="0" max="999" placeholder="14"><span class="xb" id="clubB"></span></span>
@@ -409,27 +353,12 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
         </div>
       </section>
 
-      <section class="panel pat-panel" id="patPanel" hidden>
-        <div class="panel-head"><h3>근래 패턴</h3><span class="sub">아로리 발췌 기준</span></div>
-        <div class="panel-body" id="patBody"></div>
-      </section>
-    </div>
-    <div class="rails">
-      <button class="rail" id="btnR" aria-pressed="false" aria-controls="patPanel"><span>근래 패턴</span></button>
     </div>
   </div>
+  <footer class="stat"><a href="licenses.html">출처와 라이선스</a></footer>
 </div>
 
 <script>
-const AR="https://snuarori.snu.ac.kr/admissions/officer?md=view&dataidx=";
-// [학년도, 학과, 학생, dataidx, [[교과(추정), 글자수, 바이트, 태그, ""]...]] — 공개판에는 원문에서 뽑은 끝 서술어 흐름을 싣지 않음
-const IDX=[[2026,"경영대학","A",810,[["사회",316,784,"동기방법확장",""],["사회",353,881,"방법확장",""],["사회",263,653,"방법도서",""],["사회",317,787,"방법",""],["수학",275,687,"확장",""],["국어",249,627,"동기방법확장",""],["수학",366,898,"동기방법확장수치",""],["영어",276,640,"방법확장",""],["사회",366,908,"방법도서",""],["창체·행특",291,713,"방법",""],["창체·행특",236,584,"",""]]],[2026,"경영대학","B",809,[["국어",346,854,"방법도서수치",""],["사회",296,740,"방법",""],["사회",308,776,"방법확장",""],["국어",283,707,"방법확장도서",""],["수학",270,684,"동기방법확장",""],["사회",342,864,"방법확장",""],["사회",313,765,"방법확장",""],["국어",255,629,"",""],["기타",211,521,"동기방법확장수치",""],["수학",308,766,"동기방법확장도서평가어수치",""],["창체·행특",206,508,"평가어",""]]],[2026,"경영대학","C",808,[["국어",314,786,"방법도서",""],["사회",361,889,"방법확장수치",""],["과학",270,668,"방법수치",""],["사회",281,643,"방법도서",""],["사회",302,740,"방법수치",""],["국어",289,673,"방법도서",""],["사회",309,749,"방법",""],["수학",286,704,"동기방법확장",""],["사회",363,907,"방법",""],["사회",301,757,"방법",""],["창체·행특",176,436,"확장평가어",""]]],[2026,"사회과학대학 언론정보학과","A",816,[["수학",317,777,"동기방법수치",""],["영어",333,761,"동기도서",""],["사회",307,769,"방법",""],["국어",346,858,"동기방법확장도서",""],["국어",307,765,"방법확장도서",""],["수학",240,604,"방법",""],["수학",326,812,"방법확장수치",""],["사회",331,821,"방법확장도서",""],["사회",421,1047,"방법확장도서",""],["사회",415,1041,"방법확장",""],["기타",197,499,"동기확장",""]]],[2026,"사회과학대학 언론정보학과","B",815,[["영어",295,727,"동기방법확장도서",""],["과학",308,762,"방법",""],["사회",225,531,"동기방법확장도서",""],["국어",315,781,"방법도서",""],["수학",334,834,"동기방법",""],["사회",266,658,"도서",""],["영어",374,796,"방법확장도서",""],["사회",337,837,"방법",""],["사회",363,881,"방법도서",""],["사회",370,916,"동기방법",""],["창체·행특",172,428,"동기",""]]],[2026,"사회과학대학 언론정보학과","C",814,[["국어",299,731,"동기방법도서",""],["수학",237,585,"동기방법확장수치",""],["영어",371,907,"방법확장도서",""],["사회",300,744,"방법도서",""],["수학",330,826,"방법",""],["영어",207,513,"방법확장",""],["영어",185,451,"방법",""],["수학",255,627,"방법도서",""],["사회",387,961,"동기방법확장",""],["영어",274,668,"방법확장수치",""],["창체·행특",159,397,"평가어",""]]],[2026,"자연과학대학 통계학과","A",813,[["수학",301,747,"동기방법",""],["영어",262,650,"방법",""],["국어",328,812,"동기방법확장도서",""],["수학",249,617,"방법",""],["수학",331,781,"방법확장도서수치",""],["과학",326,804,"방법수치",""],["수학",320,792,"동기방법확장수치",""],["과학",348,864,"방법확장수치",""],["과학",314,784,"동기방법확장",""],["수학",337,831,"방법",""],["창체·행특",215,531,"확장",""]]],[2026,"자연과학대학 통계학과","B",812,[["수학",306,768,"방법확장",""],["예체능",218,552,"방법",""],["사회",332,818,"방법확장도서",""],["국어",316,784,"도서수치",""],["수학",246,626,"방법",""],["국어",359,885,"동기방법도서",""],["수학",327,813,"방법확장도서",""],["영어",203,501,"방법도서",""],["과학",245,613,"동기방법확장수치",""],["수학",337,839,"방법도서수치",""],["수학",231,573,"동기방법",""]]],[2026,"자연과학대학 통계학과","C",811,[["사회",295,731,"확장수치",""],["국어",359,895,"방법확장도서",""],["사회",332,810,"방법확장도서수치",""],["과학",248,622,"동기방법확장",""],["과학",381,949,"방법수치",""],["수학",291,721,"동기방법확장수치",""],["정보",382,958,"동기방법확장",""],["과학",337,851,"방법확장수치",""],["과학",306,768,"방법확장",""],["정보",260,654,"방법수치",""],["창체·행특",211,529,"",""]]],[2025,"공과대학 컴퓨터공학부","A",799,[["국어",275,681,"방법평가어",""],["영어",376,936,"확장평가어",""],["수학",354,868,"방법평가어",""],["정보",356,886,"방법평가어",""],["예체능",299,743,"방법평가어",""],["창체·행특",389,963,"방법확장평가어수치",""],["창체·행특",323,803,"동기평가어",""]]],[2025,"공과대학 컴퓨터공학부","B",800,[["국어",389,945,"방법확장평가어",""],["수학",369,893,"방법확장평가어수치",""],["영어",411,1015,"동기방법평가어",""],["기타",405,979,"방법도서평가어",""],["과학",460,1142,"동기방법확장평가어",""],["수학",343,843,"방법확장평가어",""],["국어",254,624,"동기도서",""],["창체·행특",320,766,"동기방법평가어수치",""]]],[2025,"공과대학 컴퓨터공학부","C",801,[["국어",356,858,"방법도서평가어",""],["영어",347,801,"도서평가어",""],["정보",287,689,"동기도서평가어",""],["예체능",391,949,"방법수치",""],["과학",367,899,"동기확장평가어",""],["정보",244,602,"방법",""],["정보",298,738,"방법",""],["창체·행특",388,950,"동기평가어",""]]],[2025,"농업생명과학대학 스마트시스템과학과","A",805,[["국어",303,745,"방법도서평가어",""],["수학",358,882,"동기평가어",""],["영어",244,598,"평가어수치",""],["수학",245,609,"동기평가어",""],["창체·행특",362,890,"평가어수치",""],["창체·행특",292,696,"방법평가어수치",""],["창체·행특",330,818,"평가어수치",""],["창체·행특",205,507,"평가어수치",""]]],[2025,"농업생명과학대학 스마트시스템과학과","B",806,[["사회",412,1008,"방법확장도서평가어수치",""],["수학",336,822,"동기방법평가어수치",""],["영어",245,609,"동기",""],["과학",391,921,"동기방법평가어수치",""],["과학",248,618,"방법",""],["창체·행특",325,799,"평가어",""],["창체·행특",291,719,"평가어",""]]],[2025,"농업생명과학대학 스마트시스템과학과","C",807,[["국어",312,778,"도서평가어",""],["수학",262,648,"방법확장평가어",""],["정보",359,883,"확장평가어",""],["과학",228,566,"동기평가어",""],["과학",312,764,"동기방법도서",""],["창체·행특",333,839,"방법평가어",""],["창체·행특",381,933,"동기확장평가어수치",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","A",802,[["국어",263,641,"방법도서",""],["수학",383,949,"방법평가어",""],["기타",397,983,"동기방법평가어",""],["사회",405,995,"방법평가어",""],["사회",295,725,"방법확장평가어",""],["수학",174,430,"방법평가어",""],["창체·행특",334,822,"",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","B",803,[["영어",322,792,"방법평가어",""],["수학",311,777,"방법평가어",""],["영어",348,870,"동기평가어",""],["기타",330,810,"방법확장평가어",""],["사회",322,794,"방법도서",""],["창체·행특",226,550,"방법평가어",""],["사회",354,874,"동기",""],["창체·행특",333,823,"평가어",""]]],[2025,"생활과학대학 소비자아동학부 소비자학전공","C",804,[["사회",261,617,"도서평가어수치",""],["국어",379,923,"방법확장도서수치",""],["영어",369,867,"평가어",""],["사회",292,718,"동기방법평가어",""],["사회",306,738,"동기방법확장도서",""],["창체·행특",227,561,"평가어",""],["수학",274,682,"확장평가어",""]]],[2024,"공과대학 조선해양공학과","A",793,[["기타",253,629,"방법",""],["국어",213,523,"방법확장도서",""],["예체능",341,849,"동기방법확장평가어",""],["영어",285,653,"방법확장평가어",""],["과학",243,589,"방법도서평가어",""],["창체·행특",307,777,"방법",""],["창체·행특",244,586,"평가어수치",""]]],[2024,"공과대학 조선해양공학과","B",794,[["국어",359,881,"",""],["수학",388,956,"방법평가어",""],["국어",436,1074,"동기방법확장도서평가어",""],["과학",321,775,"방법평가어",""],["과학",291,725,"동기방법도서",""],["정보",261,619,"방법",""],["과학",299,737,"동기확장수치",""],["창체·행특",125,311,"평가어",""],["창체·행특",183,457,"평가어",""]]],[2024,"공과대학 조선해양공학과","C",795,[["국어",229,565,"동기확장평가어수치",""],["과학",244,608,"평가어",""],["국어",400,994,"동기확장평가어",""],["사회",409,1023,"확장평가어",""],["수학",155,387,"동기방법",""],["수학",316,786,"방법평가어수치",""],["과학",146,360,"평가어",""],["창체·행특",219,533,"평가어",""]]],[2024,"사범대학 교육학과","A",790,[["사회",244,600,"확장평가어",""],["기타",293,725,"방법확장평가어",""],["기타",258,622,"방법평가어",""],["수학",325,813,"방법평가어",""],["창체·행특",331,811,"방법평가어",""],["수학",290,714,"동기평가어",""],["기타",296,732,"방법평가어",""],["창체·행특",153,377,"동기평가어",""]]],[2024,"사범대학 교육학과","B",791,[["국어",197,483,"동기평가어",""],["국어",246,600,"평가어",""],["수학",340,850,"방법평가어",""],["사회",300,748,"동기방법평가어",""],["영어",262,648,"동기확장평가어",""],["창체·행특",318,788,"방법확장평가어수치",""],["창체·행특",346,844,"평가어수치",""]]],[2024,"사범대학 교육학과","C",792,[["창체·행특",250,612,"확장평가어",""],["사회",296,738,"동기방법확장평가어",""],["기타",226,552,"동기",""],["사회",302,740,"방법도서",""],["사회",265,663,"",""],["사회",272,678,"동기평가어수치",""],["사회",272,666,"방법평가어",""]]],[2024,"첨단융합학부","A",796,[["국어",276,680,"평가어",""],["기타",278,692,"도서평가어",""],["영어",352,864,"방법",""],["사회",354,886,"방법도서평가어",""],["과학",320,798,"동기평가어",""],["수학",248,610,"평가어수치",""],["국어",271,669,"동기평가어",""],["창체·행특",311,777,"동기평가어",""]]],[2024,"첨단융합학부","B",797,[["창체·행특",233,583,"",""],["사회",170,428,"방법평가어",""],["수학",286,720,"방법평가어",""],["수학",277,689,"방법평가어",""],["정보",411,1025,"방법도서평가어",""],["과학",304,758,"방법확장도서평가어",""],["사회",368,924,"방법",""],["수학",248,604,"평가어",""]]],[2024,"첨단융합학부","C",798,[["창체·행특",321,799,"평가어",""],["과학",226,562,"방법평가어",""],["과학",348,870,"방법확장평가어수치",""],["국어",410,1006,"방법평가어",""],["사회",448,1112,"확장도서평가어",""],["사회",414,1020,"방법수치",""],["수학",379,929,"동기평가어",""]]],[2023,"공과대학 건축학과","A",738,[["국어",360,878,"방법평가어",""],["과학",407,999,"방법평가어수치",""],["수학",212,520,"동기방법평가어",""],["예체능",306,750,"방법평가어",""],["과학",182,448,"확장도서수치",""],["과학",265,655,"동기방법",""],["사회",219,539,"도서",""]]],[2023,"공과대학 건축학과","B",739,[["창체·행특",411,1001,"도서평가어",""],["기타",204,514,"방법평가어",""],["영어",227,547,"수치",""],["수학",249,621,"방법",""],["창체·행특",542,1368,"동기방법확장평가어",""],["정보",316,794,"방법평가어",""]]],[2023,"공과대학 건축학과","C",740,[["사회",388,952,"방법평가어수치",""],["영어",285,709,"동기방법평가어",""],["정보",399,973,"방법확장도서평가어",""],["예체능",488,1210,"방법확장평가어수치",""],["국어",192,472,"",""],["기타",217,541,"",""],["수학",534,1292,"방법도서수치",""]]],[2023,"사회과학대학 심리학과","A",735,[["창체·행특",232,582,"",""],["국어",222,546,"동기평가어",""],["기타",204,510,"동기평가어",""],["국어",351,863,"동기",""],["국어",406,1006,"확장평가어수치",""],["사회",325,803,"방법수치",""],["사회",219,537,"방법확장",""]]],[2023,"사회과학대학 심리학과","B",736,[["창체·행특",251,613,"동기평가어",""],["사회",276,670,"평가어수치",""],["사회",215,527,"확장",""],["수학",267,659,"동기평가어",""],["사회",292,730,"방법",""],["영어",236,590,"평가어",""]]],[2023,"사회과학대학 심리학과","C",737,[["국어",176,434,"방법평가어",""],["기타",170,418,"도서",""],["기타",157,387,"방법",""],["영어",381,873,"동기방법확장평가어",""],["사회",311,747,"방법평가어수치",""],["국어",342,838,"방법평가어수치",""],["과학",300,742,"방법",""],["예체능",357,887,"방법평가어",""]]],[2023,"인문대학 역사학부","A",732,[["사회",349,865,"평가어수치",""],["국어",211,521,"방법평가어",""],["사회",270,668,"방법도서평가어수치",""],["사회",276,690,"방법",""],["사회",227,541,"동기확장도서수치",""],["사회",132,330,"평가어",""]]],[2023,"인문대학 역사학부","B",733,[["사회",355,883,"방법도서",""],["사회",462,1132,"방법확장평가어",""],["사회",365,907,"방법확장평가어",""],["사회",309,755,"방법평가어",""],["과학",266,660,"동기방법평가어",""],["사회",151,371,"",""]]],[2023,"인문대학 역사학부","C",734,[["과학",408,944,"평가어수치",""],["사회",275,691,"방법",""],["사회",441,1095,"방법확장평가어",""],["사회",228,566,"방법확장",""],["국어",327,755,"수치",""],["사회",413,1037,"방법확장평가어",""]]],[2022,"공과대학 화학생물공학부","A",707,[["사회",237,585,"평가어",""],["과학",320,812,"동기방법확장평가어",""],["국어",289,703,"방법",""],["수학",241,591,"방법",""],["사회",205,517,"방법평가어",""],["과학",239,549,"동기수치",""],["수학",245,601,"평가어",""]]],[2022,"공과대학 화학생물공학부","B",708,[["영어",142,352,"방법",""],["국어",145,351,"도서평가어",""],["과학",136,338,"평가어",""],["과학",156,388,"방법평가어",""],["수학",159,385,"방법평가어",""],["사회",149,361,"평가어",""],["과학",216,530,"방법",""],["창체·행특",201,487,"방법평가어수치",""],["창체·행특",265,651,"방법평가어",""]]],[2022,"공과대학 화학생물공학부","C",709,[["과학",383,933,"방법도서",""],["수학",254,638,"평가어",""],["과학",257,649,"",""],["과학",283,685,"방법도서",""],["과학",235,575,"방법",""],["과학",201,499,"방법평가어",""],["기타",246,608,"동기방법평가어",""]]],[2022,"사범대학 국어교육과","A",710,[["사회",167,421,"",""],["사회",265,649,"",""],["기타",160,390,"평가어",""],["영어",264,626,"방법평가어",""],["사회",222,556,"방법확장평가어",""],["수학",261,645,"평가어수치",""],["국어",191,471,"평가어",""],["국어",121,295,"평가어",""],["수학",182,448,"평가어",""]]],[2022,"사범대학 국어교육과","B",711,[["영어",216,534,"평가어",""],["창체·행특",305,707,"방법도서평가어",""],["기타",196,488,"동기방법",""],["수학",186,466,"방법",""],["창체·행특",189,461,"방법평가어",""],["국어",202,504,"동기확장",""],["창체·행특",268,664,"평가어",""]]],[2022,"사범대학 국어교육과","C",712,[["사회",150,366,"방법",""],["사회",218,534,"방법확장수치",""],["국어",164,404,"확장평가어수치",""],["영어",282,668,"방법도서평가어",""],["사회",296,678,"방법",""],["사회",134,334,"",""],["기타",151,377,"방법확장",""],["국어",215,535,"방법도서평가어",""],["창체·행특",258,640,"방법",""],["영어",181,443,"평가어",""]]],[2022,"약학대학 약학계열","A",713,[["영어",213,507,"평가어",""],["창체·행특",186,450,"방법",""],["국어",254,618,"방법도서평가어",""],["국어",204,504,"도서",""],["과학",200,506,"방법평가어",""],["과학",110,276,"",""],["과학",234,576,"방법도서",""],["창체·행특",211,523,"수치",""]]],[2022,"약학대학 약학계열","B",714,[["국어",219,533,"방법확장평가어",""],["영어",243,611,"방법",""],["과학",244,604,"동기방법확장",""],["과학",208,520,"방법평가어수치",""],["과학",248,616,"평가어",""],["창체·행특",215,535,"평가어",""]]],[2022,"약학대학 약학계열","C",715,[["과학",241,589,"방법도서평가어",""],["창체·행특",276,670,"동기방법도서평가어",""],["기타",269,653,"동기평가어",""],["영어",270,664,"평가어수치",""],["사회",225,539,"확장도서평가어",""],["사회",223,541,"동기평가어",""],["과학",255,623,"동기도서평가어수치",""],["창체·행특",241,583,"동기평가어",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","A",599,[["정보",207,485,"방법",""],["기타",174,440,"",""],["수학",182,460,"동기평가어",""],["기타",123,303,"방법",""],["과학",180,460,"방법평가어",""],["국어",198,488,"평가어수치",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","B",600,[["과학",84,206,"방법",""],["수학",157,389,"방법수치",""],["과학",221,555,"방법",""],["수학",105,263,"",""],["영어",97,247,"평가어",""],["과학",268,662,"동기방법평가어",""],["과학",245,605,"방법평가어",""],["과학",118,296,"방법",""]]],[2021,"농업생명과학대학 바이오시스템·소재학부","C",601,[["과학",137,343,"동기방법",""],["사회",430,1044,"동기방법도서",""],["수학",611,1473,"동기확장수치",""],["수학",173,433,"방법",""],["과학",200,498,"방법확장",""]]],[2021,"사범대학 영어교육과","A",602,[["국어",180,454,"평가어",""],["수학",284,710,"방법평가어",""],["영어",124,296,"방법평가어",""],["사회",416,1034,"동기방법",""],["영어",356,746,"",""],["수학",271,671,"",""]]],[2021,"사범대학 영어교육과","B",603,[["창체·행특",317,769,"확장평가어수치",""],["영어",594,1490,"방법확장",""],["기타",201,505,"평가어",""],["기타",284,680,"방법수치",""],["창체·행특",252,622,"방법수치",""],["국어",202,494,"방법",""],["예체능",555,1369,"방법수치",""]]],[2021,"사범대학 영어교육과","C",604,[["사회",240,600,"동기방법평가어",""],["영어",183,459,"동기방법평가어수치",""],["기타",188,466,"방법평가어",""],["국어",264,644,"방법평가어",""],["영어",262,646,"방법",""],["사회",396,938,"방법도서수치",""],["국어",159,395,"",""],["기타",267,675,"확장",""]]],[2021,"치의학대학원 치의학과","A",605,[["수학",190,458,"방법수치",""],["과학",78,200,"동기방법확장",""],["사회",331,779,"도서",""],["기타",385,933,"방법평가어수치",""],["과학",157,399,"",""],["창체·행특",155,385,"동기방법",""],["예체능",285,711,"동기",""],["기타",111,283,"평가어",""],["과학",249,607,"",""]]],[2021,"치의학대학원 치의학과","B",606,[["수학",174,436,"방법",""],["수학",272,664,"방법평가어수치",""],["과학",60,154,"확장",""],["기타",158,394,"방법",""],["기타",66,166,"동기",""],["창체·행특",190,476,"평가어",""],["과학",201,493,"방법평가어",""],["기타",182,446,"동기방법수치",""]]],[2021,"치의학대학원 치의학과","C",607,[["수학",221,557,"방법",""],["사회",253,629,"동기방법",""],["수학",249,613,"방법확장평가어수치",""],["수학",272,670,"방법수치",""],["과학",159,397,"방법확장수치",""],["사회",214,528,"동기방법",""],["과학",184,440,"방법수치",""],["기타",109,271,"수치",""]]],[2020,"공과대학 기계공학부","A",561,[["수학",135,341,"",""],["창체·행특",134,340,"방법",""],["사회",243,613,"방법확장평가어",""],["예체능",174,400,"수치",""],["과학",111,255,"방법수치",""],["정보",64,160,"평가어",""],["기타",156,384,"방법확장도서",""],["기타",94,236,"방법평가어",""],["과학",78,194,"방법",""]]],[2020,"공과대학 기계공학부","B",562,[["수학",134,344,"방법",""],["기타",91,211,"방법수치",""],["수학",341,843,"동기방법수치",""],["정보",524,1282,"방법평가어",""],["수학",255,613,"동기방법도서수치",""],["창체·행특",317,747,"동기확장",""],["정보",205,495,"방법수치",""]]],[2020,"공과대학 기계공학부","C",563,[["과학",324,810,"확장평가어",""],["과학",309,743,"방법수치",""],["수학",85,213,"",""],["과학",154,390,"동기방법평가어",""],["수학",85,215,"",""]]],[2020,"농업생명과학대학 농경제사회학부","A",564,[["국어",85,213,"평가어",""],["수학",114,284,"평가어",""],["수학",150,378,"방법",""],["수학",243,609,"동기방법평가어",""],["사회",148,374,"방법",""],["사회",166,398,"도서",""]]],[2020,"농업생명과학대학 농경제사회학부","B",565,[["국어",125,307,"방법",""],["영어",138,304,"방법",""],["사회",150,374,"방법평가어",""],["사회",343,841,"방법",""],["국어",238,600,"방법평가어",""],["사회",167,421,"방법확장평가어",""],["국어",184,446,"평가어수치",""],["사회",218,560,"",""]]],[2020,"농업생명과학대학 농경제사회학부","C",566,[["사회",225,571,"방법확장평가어",""],["수학",156,390,"방법확장",""],["기타",103,259,"동기방법수치",""],["기타",99,247,"방법",""],["국어",334,832,"방법",""],["사회",184,456,"방법확장",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","A",567,[["영어",127,327,"방법",""],["사회",293,735,"방법수치",""],["사회",206,512,"수치",""],["국어",180,408,"도서",""],["사회",209,531,"방법수치",""],["수학",69,179,"",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","B",568,[["창체·행특",164,404,"방법확장",""],["과학",237,595,"동기방법",""],["과학",141,359,"",""],["사회",327,813,"",""],["사회",166,422,"방법수치",""],["기타",277,687,"동기확장",""],["사회",250,626,"",""]]],[2020,"생활과학대학 소비자아동학부 아동가족학전공","C",569,[["기타",280,706,"도서",""],["기타",150,374,"",""],["국어",185,453,"방법도서수치",""],["사회",241,591,"확장평가어",""],["예체능",378,938,"방법확장평가어수치",""],["창체·행특",154,384,"방법",""]]],[2019,"공과대학 건설환경공학부","A",501,[["과학",147,369,"방법평가어",""],["기타",85,213,"방법",""],["과학",85,217,"방법",""],["영어",81,205,"",""],["수학",50,124,"도서",""],["과학",73,183,"평가어",""],["과학",113,285,"방법",""],["기타",83,205,"",""]]],[2019,"공과대학 건설환경공학부","B",502,[["과학",104,262,"평가어",""],["수학",190,478,"방법확장",""],["과학",107,267,"방법수치",""],["사회",255,629,"평가어수치",""],["과학",213,523,"방법수치",""]]],[2019,"공과대학 건설환경공학부","C",503,[["영어",126,314,"",""],["수학",96,242,"방법",""],["과학",155,389,"",""],["수학",178,450,"동기",""],["수학",197,493,"방법평가어수치",""],["수학",123,311,"",""],["수학",154,372,"수치",""]]],[2019,"농업생명과학대학 응용생물화학부","A",504,[["국어",185,447,"방법",""],["창체·행특",74,184,"평가어",""],["과학",133,325,"수치",""],["과학",104,264,"방법",""],["창체·행특",181,453,"평가어",""],["수학",73,185,"",""],["수학",145,365,"방법수치",""],["기타",146,370,"평가어",""],["과학",89,227,"방법",""],["창체·행특",139,355,"방법",""],["과학",200,500,"방법평가어",""],["수학",132,330,"동기방법수치",""],["기타",174,428,"방법수치",""],["과학",208,526,"방법",""],["수학",333,829,"방법평가어",""],["과학",178,444,"동기방법평가어",""]]],[2019,"농업생명과학대학 응용생물화학부","B",505,[["과학",247,613,"동기방법확장평가어수치",""],["과학",126,316,"도서",""],["과학",143,357,"방법평가어",""],["과학",177,445,"방법",""],["수학",225,563,"",""],["과학",117,285,"방법평가어",""],["과학",319,785,"동기방법확장평가어수치",""],["국어",159,397,"도서평가어",""],["수학",271,687,"방법확장",""],["과학",162,394,"방법",""]]],[2019,"농업생명과학대학 응용생물화학부","C",506,[["과학",246,732,"확장평가어",""],["과학",237,671,"방법수치",""],["수학",65,193,"",""],["과학",121,357,"동기방법평가어",""],["수학",68,198,"",""]]],[2019,"인문대학 국어국문학과","A",498,[["국어",148,384,"방법평가어",""],["국어",141,353,"방법",""],["수학",235,595,"방법도서수치",""],["영어",234,572,"평가어수치",""],["사회",139,345,"방법확장",""],["창체·행특",254,620,"방법확장수치",""],["수학",118,292,"수치",""],["창체·행특",228,578,"확장평가어",""],["기타",161,397,"동기평가어",""],["국어",201,463,"방법",""]]],[2019,"인문대학 국어국문학과","B",499,[["수학",214,530,"방법수치",""],["국어",66,168,"",""],["국어",108,268,"",""],["수학",157,385,"",""],["국어",309,779,"방법",""],["수학",261,647,"방법평가어",""],["국어",175,435,"방법확장도서수치",""],["수학",330,818,"방법평가어",""],["영어",249,619,"방법",""],["기타",215,529,"방법평가어",""],["기타",236,576,"방법확장평가어",""],["국어",180,448,"동기평가어수치",""]]],[2019,"인문대학 국어국문학과","C",500,[["국어",178,426,"방법도서평가어",""],["수학",213,521,"평가어",""],["창체·행특",149,365,"방법",""],["국어",269,663,"도서",""],["사회",247,605,"도서",""],["과학",179,457,"확장평가어",""],["창체·행특",155,387,"확장도서평가어",""],["영어",270,588,"방법도서",""],["기타",227,563,"확장",""],["사회",305,759,"도서수치",""],["국어",267,649,"",""]]]];
-
-const YEARS=[2019,2020,2021,2022,2023,2024,2025,2026];
-const TREND={judge:[39,27,32,63,59,80,82,5],extend:[18,22,18,14,25,29,24,51],book:[12,7,3,17,12,14,21,33]};
-const ENDS={"2024-25":[["학생임",44],["보임",27],["발표함",27],["함",19],["설명함",17],["보여줌",16],["있음",15],["탐구함",15]],"2026":[["탐구함",43],["분석함",28],["작성함",27],["제시함",26],["발표함",23],["조사함",16],["참여함",16],["살펴봄",15]]};
-const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아가",8],["이를 바탕으로",7],["이후",7]],"2026":[["추가로",21],["이후",20],["또한",15],["이어",10],["특히",5],["이를 토대로",4]]};
-
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
@@ -662,6 +591,13 @@ const ORDER={err:0,warn:1,sp:1.5,info:2};
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
+
+function updateSettingsDot(){$("settingsDot").hidden=!!el.blocked.value.trim()}
+function closeSettings(){if($("settingsPanel").hidden)return;$("settingsPanel").hidden=true;$("settingsButton").setAttribute("aria-expanded","false");$("settingsButton").focus()}
+$("settingsButton").addEventListener("click",()=>{const open=$("settingsPanel").hidden;$("settingsPanel").hidden=!open;$("settingsButton").setAttribute("aria-expanded",String(open));if(open)el.blocked.focus()});
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSettings()});
+document.addEventListener("click",event=>{if(!event.target.closest(".settings-wrap"))closeSettings()});
+
 /* 학생 작업 내용은 선택한 저장소에서만 유지합니다. */
 const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:");
 function draftKeys(storage){return Object.keys(storage).filter(isDraftKey)}
@@ -727,7 +663,8 @@ function renderFindings(F){
   const rows=[...groups.values()].sort((a,b)=>ORDER[a.sev]-ORDER[b.sev]||a.id.localeCompare(b.id,undefined,{numeric:true}));
   const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
   el.tally.innerHTML=(F.length?["err","warn","info"].filter(k=>c[k]).map(k=>`<span class="pill ${k}">${SEV[k]} ${c[k]}</span>`).join(""):'<span class="pill ok">걸린 항목 없음</span>');
-  if(!rows.length){el.find.innerHTML='<div class="empty-note">자동 판정 항목에서 걸린 것이 없습니다. 관찰 근거, 성취기준 연계, 과장 여부(요령 p.19, p.95)는 직접 확인하세요.</div>';return}
+  $("sheetBody").classList.toggle("empty-one",!rows.length&&view==="one");
+  if(!rows.length){el.find.innerHTML='<span class="empty-note">걸린 항목 없음</span>';return}
   el.find.innerHTML='<table><thead><tr><th>구분</th><th>규칙</th><th>발견</th><th>근거</th></tr></thead><tbody>'+rows.map(r=>`<tr class="row" data-s="${r.start}" data-e="${r.end}"><td><span class="pill ${r.sev}">${SEV[r.sev]}</span></td><td><span class="id">${r.id}</span> ${esc(r.name)}</td><td class="hit">${esc(r.hit)}${r.count>1?' <span class="id">×'+r.count+"</span>":""}${r.alt?`<div class="alt">대체 예: ${esc(r.alt)}</div>`:""}</td><td class="src">${esc(r.src)}</td></tr>`).join("")+"</tbody></table>";
 }
 function renderMeter(t){
@@ -745,6 +682,7 @@ function renderMeter(t){
   if(g>0&&g<=L){if(!gm){gm=document.createElement("span");gm.className="goal";$("bar").appendChild(gm)}gm.style.left=(g/L*100)+"%";gm.title="목표 "+g+" Byte"}else if(gm)gm.remove();
 }
 function update(){
+  updateSettingsDot();
   if(typeof renderExtra==="function")renderExtra();
   const t=el.src.value;const F=scan(t);
   paintBackdrop(t,F);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t);
@@ -760,73 +698,15 @@ $("goal").addEventListener("input",()=>{store.set("setuk-goal",$("goal").value);
 el.find.addEventListener("click",e=>{const tr=e.target.closest("tr.row");if(!tr)return;const s=+tr.dataset.s,en=+tr.dataset.e;if(s<0)return;el.src.focus();el.src.setSelectionRange(s,en)});
 $("clearBtn").addEventListener("click",()=>{el.src.value="";if(!CLS)$("edSub").textContent="세특 문장을 붙여 넣으세요.";update();el.src.focus()});
 
-/* ---------- 패널 전환 ---------- */
-function setMode(){
-  const L=$("btnL").getAttribute("aria-pressed")==="true",Rr=$("btnR").getAttribute("aria-pressed")==="true";
-  $("casesPanel").hidden=!L;$("patPanel").hidden=!Rr;
-  el.stage.className="stage"+(L&&Rr?" lr":L?" l":Rr?" r":"");
-  store.set("setuk-mode",(L?"L":"")+(Rr?"R":""));
-}
-["btnL","btnR"].forEach(id=>$(id).addEventListener("click",()=>{const b=$(id);b.setAttribute("aria-pressed",b.getAttribute("aria-pressed")==="true"?"false":"true");setMode()}));
-
-/* ---------- 사례집 ---------- */
-const FLAT=[];IDX.forEach(([y,d,s,id,ps])=>ps.forEach((p,i)=>FLAT.push({y,d,s,id,no:i+1,subj:p[0],len:p[1],b:p[2],tags:p[3],flow:p[4]})));
-const SUBJS=["국어","영어","수학","사회","과학","정보","예체능","창체·행특","기타"];
-$("fSubj").innerHTML='<option value="">교과 전체</option>'+SUBJS.map(v=>`<option>${v}</option>`).join("");
-$("fYear").innerHTML='<option value="">학년도 전체</option>'+YEARS.slice().reverse().map(v=>`<option value="${v}">${v}학년도</option>`).join("");
-let shown=60;
-const TAGS=["동기","방법","확장","도서","평가어","수치"];
-function caseList(){
-  const fs=$("fSubj").value,fy=$("fYear").value,ft=$("fTag").value;
-  return FLAT.filter(c=>(!fs||c.subj===fs)&&(!fy||c.y==fy)&&(!ft||(ft[0]==="!"?!c.tags.includes(ft.slice(1)):c.tags.includes(ft))));
-}
-function renderCases(){
-  const list=caseList();
-  $("caseCount").textContent=list.length+"문단";
-  $("cases").innerHTML=list.slice(0,shown).map(c=>{
-    const tags=TAGS.filter(t=>c.tags.includes(t)).map(t=>`<span class="chip${t==="평가어"?" judge":""}">${t}</span>`).join("");
-    const flow=c.flow?c.flow.split(">").map(esc).join('<span class="arr">→</span>'):"";
-    return `<article class="case"><div class="case-top"><strong>${c.y} · ${esc(c.d)} ${c.s}</strong><span class="meta">문단 ${c.no} · ${c.len}자 · ${c.b.toLocaleString()}B</span><a href="${AR}${c.id}" target="_blank" rel="noopener">원문 ↗</a></div><div class="chips"><span class="chip subj">${c.subj}</span>${tags}</div>${flow?`<div class="flow">${flow}</div>`:""}</article>`}).join("")||'<p class="note">조건에 맞는 문단이 없습니다.</p>';
-  $("moreBtn").hidden=list.length<=shown;
-}
-["fSubj","fYear","fTag"].forEach(id=>$(id).addEventListener("change",()=>{shown=60;renderCases()}));
-$("moreBtn").addEventListener("click",()=>{shown+=60;renderCases()});
-
-/* ---------- 패턴 ---------- */
-function chart(){
-  const W=320,H=150,pl=26,pr=8,pt=8,pb=20,iw=W-pl-pr,ih=H-pt-pb;
-  const x=i=>pl+i*iw/(YEARS.length-1),y=v=>pt+ih-v/100*ih;
-  let g="";[0,25,50,75,100].forEach(v=>{g+=`<line class="grid" x1="${pl}" x2="${W-pr}" y1="${y(v)}" y2="${y(v)}"/><text x="${pl-4}" y="${y(v)+3}" text-anchor="end">${v}</text>`});
-  YEARS.forEach((yr,i)=>{g+=`<text x="${x(i)}" y="${H-6}" text-anchor="middle">${String(yr).slice(2)}</text>`});
-  const S=[["judge","var(--c1)"],["extend","var(--c2)"],["book","var(--c3)"]];
-  for(const [k,c] of S){const pts=TREND[k].map((v,i)=>x(i)+","+y(v)).join(" ");g+=`<polyline points="${pts}" fill="none" style="stroke:${c}" stroke-width="2" stroke-linejoin="round"/>`;const lv=TREND[k][7];g+=`<circle cx="${x(7)}" cy="${y(lv)}" r="3" style="fill:${c}"/>`}
-  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="연도별 평가어, 확장 연결어, 도서 표기 포함 문단 비율">${g}</svg>`;
-}
-function rank(arr,alt){const max=arr[0][1];return `<ul class="rank${alt?" alt":""}">`+arr.map(([w,n])=>`<li><span class="w">${w}</span><span class="b" style="width:${Math.round(n/max*60)}%"></span><span class="n">${n}</span></li>`).join("")+"</ul>"}
-$("patBody").innerHTML=`
-<div class="sec"><h4>지금 입력한 글</h4><div id="diag"></div></div>
-<div class="sec"><h4>연도별 변화 (문단 중 해당 요소가 있는 비율, 퍼센트)</h4>
-${chart()}
-<div class="legend"><span><i style="background:var(--c1)"></i>평가어 (2025 82 → 2026 5)</span><span><i style="background:var(--c2)"></i>확장 연결어 (24 → 51)</span><span><i style="background:var(--c3)"></i>도서(저자) 표기 (21 → 33)</span></div>
-<p>2019~2026학년도 학생부 발췌 574문단. 평가어는 탁월·우수·돋보임·~학생임 등, 확장 연결어는 이후·이어·추가로·나아가 등.</p></div>
-<p>많이 쓰인 표현의 통계이며, 권장하는 표현이 아닙니다.</p>
-<div class="sec"><h4>문장 끝 서술어</h4><div class="cols"><div><div class="colh">2024~25 (136문단)</div>${rank(ENDS["2024-25"],true)}</div><div><div class="colh">2026 (99문단)</div>${rank(ENDS["2026"])}</div></div>
-<p>2024~25는 '~학생임'으로 맺는 총평이 가장 많고, 2026은 탐구함·분석함·제시함 같은 행동 서술어가 차지합니다.</p></div>
-<div class="sec"><h4>문단을 잇는 연결어 (포함 문단 수)</h4><div class="cols"><div><div class="colh">2024~25</div>${rank(CONN["2024-25"],true)}</div><div><div class="colh">2026</div>${rank(CONN["2026"])}</div></div></div>
-<div class="sec"><h4>권장 구성</h4>
-<ol class="steps"><li><b>계기</b> 수업 중 생긴 질문이나 관심 (관심을 갖고, 궁금증을)</li><li><b>방법</b> 자료·도구·절차 (비교하여, 측정하고, 설문을 실시하여)</li><li><b>결과</b> 정리하거나 제시한 내용 (정리함, 제시함)</li><li><b>확장</b> 후속 읽기·조사·적용 (이후, 이어, 추가로)</li></ol>
-<p>공식 예시 자료는 성취수준, 평가 과제에서 관찰한 수행 과정·결과, 역량, 교사 총평의 네 요소로 세특을 구성합니다(교과세특 예시 자료 일러두기). 평가어를 쓸 때는 근거 행동 뒤에 둡니다(요령 p.19 5-가).</p>
-<p class="cite">길이 참고: 공식 예시 고등 사회 302~399자(예시 자료 p.160~169), 아로리 발췌 문단 평균 약 300자, 과목 상한 500자(요령 p.208).</p></div>
-<div class="sec"><h4>해석할 때 주의</h4><p>2026 발췌는 학생 9명 모두 정확히 11문단이고 길이와 따옴표 표기가 고르게 맞춰져 있어, 웹진이 문단을 고르고 정리한 결과일 가능성이 있습니다. 학교 현장 전체의 경향으로 단정하지 마세요.</p></div>
-<p class="cite">글꼴: Pretendard 1.3.9 © Kil Hyung-jin, SIL Open Font License 1.1 (<a href="fonts/LICENSE-Pretendard.txt" target="_blank" rel="noopener">라이선스 전문</a>) · <a href="licenses.html">출처와 라이선스</a></p>`;
-
 function renderDiag(t){
   const box=$("diag");if(!box)return;
   const ss=sentences(t);
-  if(!ss.length){box.innerHTML='<p>입력란에 세특을 넣으면 문장 수, 연결어, 평가어 비율을 2026 발췌와 비교해 보여줍니다.</p>';return}
+  if(!ss.length){$("diagDetails").hidden=true;box.innerHTML="";return}
   const n=ss.length,avg=Math.round(ss.reduce((a,s)=>a+s.s.length,0)/n);
   const conn=CONNS.filter(c=>t.includes(c));
   const act=ss.filter(s=>ACT.test(s.s)).length,jud=ss.filter(s=>JUDGE.test(s.s)).length;
+  $("diagDetails").hidden=false;
+  $("diagSummary").textContent=`${n}문장 · 평균 ${avg}자 · 행동 서술 ${act}/${n} · 평가어 ${jud}/${n} · 연결어 ${conn.length}`;
   const flow=ss.map(s=>esc(endWord(s.s))).join('<span class="arr" style="color:var(--muted);padding:0 3px">→</span>');
   box.innerHTML=`<dl class="diag">
 <div><dt>문장 수</dt><dd>${n}</dd></div>
@@ -834,8 +714,7 @@ function renderDiag(t){
 <div><dt>행동 서술 문장</dt><dd>${act}/${n}</dd></div>
 <div><dt>평가어 문장</dt><dd>${jud}/${n}</dd></div>
 <div><dt>확장·연결어</dt><dd>${conn.length}<small> ${conn.length?esc(conn.join(", ")):"없음"}</small></dd></div>
-</dl><p class="myflow">흐름: ${flow}</p>
-<p>2026 발췌 문단은 평균 약 4문장, 확장 연결어 포함 51퍼센트, 방법 서술 포함 86퍼센트, 평가어 포함 5퍼센트입니다.</p>`;
+</dl><p class="myflow">흐름: ${flow}</p>`;
 }
 
 
@@ -966,7 +845,7 @@ function renderClassView(){
   const emptyAdvice=MODE==="beh"?'<div class="empty-note">행특은 모든 학생 입력. 관찰하지 못한 경우에도 \'관찰 기회 없음.\' 등으로 입력</div>':"";
   $("classView").innerHTML=sum+emptyAdvice+head+dl;
 }
-function setView(v){view=v;$("tabOne").setAttribute("aria-selected",v==="one");$("tabSp").setAttribute("aria-selected",v==="sp");$("tabAll").setAttribute("aria-selected",v==="all");$("findings").hidden=v!=="one";$("spellView").hidden=v!=="sp";$("classView").hidden=v!=="all";if(v==="all")renderClassView()}
+function setView(v){view=v;$("sheetBody").classList.toggle("empty-one",v==="one"&&!scan(el.src.value).length);$("tabOne").setAttribute("aria-selected",v==="one");$("tabSp").setAttribute("aria-selected",v==="sp");$("tabAll").setAttribute("aria-selected",v==="all");$("findings").hidden=v!=="one";$("spellView").hidden=v!=="sp";$("classView").hidden=v!=="all";if(v==="all")renderClassView()}
 $("tabOne").addEventListener("click",()=>setView("one"));
 $("tabAll").addEventListener("click",()=>setView("all"));
 $("tabSp").addEventListener("click",()=>setView("sp"));
@@ -1098,8 +977,6 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
   el.orgs.value=store.get("setuk-orgs")||"";
   el.club.value=store.get("setuk-club")||"";el.hours.value=store.get("setuk-hours")||"";el.hope.value=draftStore.get("setuk-hope")||"";
   const g=store.get("setuk-goal");if(g)$("goal").value=g;
-  const m=store.get("setuk-mode")||"";if(m.includes("L"))$("btnL").setAttribute("aria-pressed","true");if(m.includes("R"))$("btnR").setAttribute("aria-pressed","true");
-  setMode();renderCases();
   const am=store.get("setuk-mode-area");setArea(MODES[am]?am:"subj");
 })();
 </script>
