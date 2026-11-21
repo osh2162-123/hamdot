@@ -1,7 +1,7 @@
 *요약*.txt
 *.xlsx
 *.xls
-개선계획.md
+개선계획*.md
 작업지시_*.md
 보고_*.md
 .agents/*
@@ -10,3 +10,9 @@
 !.agents/skills/hamdot-*/
 .aider-desk/
 skills-lock.json
+*.pdf
+음성*.txt
+생기부*.txt
+*녹음*
+*.m4a
+*.mp3
