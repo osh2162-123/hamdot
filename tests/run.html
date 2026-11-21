@@ -42,14 +42,19 @@ async function run(){
     let passed=0,failed=0,known=0;
     for(const item of cases){
       app.setArea(item.mode);
-      const actual=[...new Set(app.scan(item.text).map(f=>f.id))];
-      const ok=item.expect.every(id=>actual.includes(id))&&item.not.every(id=>!actual.includes(id));
+      const findings=app.scan(item.text);
+      const actual=[...new Set(findings.map(f=>f.id))];
+      const altChecks=Object.entries(item.alt||{});
+      const altOk=altChecks.every(([hit,value])=>findings.some(f=>f.hit===hit&&f.alt.includes(value)));
+      const ok=item.expect.every(id=>actual.includes(id))&&item.not.every(id=>!actual.includes(id))&&altOk;
       let result;
       if(ok){passed++;result=item.known_fail?"통과 · known_fail 해제 검토":"통과"}
       else if(item.known_fail){known++;result="알려진 실패"}
       else{failed++;result="실패"}
       const row=document.createElement("tr");row.className=ok?"pass":item.known_fail?"known":"fail";
-      for(const value of [result,item.mode,item.text,"필수 "+item.expect.join(", ")+" / 제외 "+item.not.join(", "),actual.join(", "),item.note]){
+      const expected="필수 "+item.expect.join(", ")+" / 제외 "+item.not.join(", ")+altChecks.map(([hit,value])=>` / ${hit}의 대체 예시 포함 ${value}`).join("");
+      const observed=actual.join(", ")+findings.filter(f=>f.alt).map(f=>` / ${f.hit}: ${f.alt}`).join("");
+      for(const value of [result,item.mode,item.text,expected,observed,item.note]){
         const cell=document.createElement("td");cell.textContent=value;row.appendChild(cell);
       }
       document.getElementById("results").appendChild(row);
