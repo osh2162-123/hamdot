@@ -298,7 +298,8 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
         <div class="tally" id="tally"></div>
         <span class="spacer"></span>
         <label class="blk" for="blocked">학교 식별어
-          <input id="blocked" type="text" placeholder="학교명, 축제명 (쉼표로 구분)">
+          <input id="blocked" type="text" placeholder="학교명, 약칭, 축제명, 지역명 (쉼표로 구분)">
+          <small>동아리명에 붙은 학교 약칭도 넣으세요</small>
         </label>
         <label class="blk" for="orgs">기관·상호 추가
           <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)">
@@ -453,16 +454,22 @@ const isCA=()=>MODE==="auto"||MODE==="club"||MODE==="career";
 /* ---------- 규칙 ---------- */
 const R=[
  {id:"A1",sev:"err",name:"공인어학시험",src:"요령 p.18 3-가",re:/TOEIC|TOEFL|TEPS|HSK|JLPT|JPT|DELF|DALF|TESTDAF|TORFL|DELE|토익|토플|텝스|한자능력검정|상공회의소\s?한자|실용한자|한자급수|상무한검|한자자격검정/gi},
- {id:"A2",sev:"warn",name:"대회·수상 실적",src:"요령 p.18 3-나, p.118",re:/대회|입상|수상(?!\s?스키)|[금은동]상|장려상|최우수상|우수상/g},
+ {id:"A2",sev:"err",name:"대회 용어(수상경력 외 기재 불가)",src:"요령 p.18 3-나, p.118 / 연수자료 p.7",re:/대회/g,alt:"시상이 없는 단순 행사라면 '체육 행사', '합창제', '한마당' 등. 시상이 있던 대회는 내용 자체를 빼야 함"},
+ {id:"A15",sev:"warn",name:"수상 실적",src:"요령 p.18 3-나, p.118",re:/입상|수상(?!\s?스키)|[금은동]상|장려상|최우수상|우수상/g},
  {id:"A3",sev:"err",name:"교외상",src:"요령 p.18 3-다",re:/표창장|감사장|공로상/g},
- {id:"A4",sev:"warn",name:"인증시험",src:"요령 p.18 3-라",re:/인증\s?시험|인증서|급수\s?시험/g},
+ {id:"A4",sev:"warn",name:"인증시험·인증 취득",src:"요령 p.18 3-라",re:/인증\s?시험|급수\s?시험|인증(을|를)?\s?(받|취득|획득|부여)|(\d|[일이삼사오])\s?단계\s?인증|독서\s?인증|인증제/g,alt:"단계별 활동에 참가하여"},
+ {id:"A20",sev:"info",name:"'인증서' 표현(문맥 확인)",src:"요령 p.18 3-라",re:/인증서/g},
+ {id:"B12",sev:"warn",name:"가운뎃점: 대입 자료에서 깨질 수 있음, 쉼표 권장(삭제 필수는 아님)",src:"요령 p.30 / 연수자료 p.7",re:/[·・‧]/g,alt:"상·중·하위권 → 상, 중, 하위권"},
+ {id:"B13",sev:"warn",name:"한자: 한글로 입력",src:"요령 p.28",re:/[㐀-䶿一-鿿豈-﫿]+/g},
+ {id:"A17",sev:"warn",name:"청소년단체명(정규교육과정 외 기재 불가)",src:"요령 p.78",re:/스카우트|걸스카우트|RCY|청소년적십자|아람단|누리단|해양소년단/g},
  {id:"A5",sev:"err",name:"모의고사·학력평가 성적",src:"요령 p.18 3-마",re:/모의고사|모의평가|학력평가|전국연합|백분위|표준점수/g},
  {id:"A6",sev:"warn",name:"논문 투고·출간·지식재산권",src:"요령 p.18 3-바·사·아",re:/학회|학술지|투고|등재|출간|출판|특허|실용신안|상표\s?등록|출원/g},
  {id:"A7",sev:"warn",name:"해외 활동실적",src:"요령 p.18 3-자",re:/해외\s?(?:봉사|연수|활동|탐방|캠프)|어학연수|교환학생/g},
- {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시",src:"요령 p.18 3-차",re:/(?<!학)부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모(?:부)?(?!티콘|지)|고모(?:부)?/g},
+ {id:"A8",sev:"warn",name:"부모 사회·경제적 지위 암시(높은 지위뿐 아니라 낮은 지위 암시도 불가)",src:"요령 p.18 3-차",re:/(?<!학)부모님?|아버지|어머니|아빠|엄마|부친|모친|친인척|외?삼촌|이모(?:부)?(?!티콘|지)|고모(?:부)?/g},
  {id:"A9",sev:"err",name:"장학생·장학금",src:"요령 p.18 3-카",re:/장학/g},
  {id:"A10",sev:"warn",name:"대학명·기관명·상호명·강사명",src:"요령 p.19 3-타",re:/[가-힣]{1,12}대학교|대학원|교수님?|강사|주식회사|㈜|[가-힣]{2,10}(?:재단|협회|연구소)/g},
- {id:"A11",sev:"warn",name:"자격증 명칭·취득",src:"요령 p.19 3-파",re:/자격증|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b/g},
+ {id:"A11",sev:"err",name:"자격증 명칭·취득 사실",src:"요령 p.19 3-파 / 연수자료 p.7",re:/정보처리기사|정보처리기능사|전기기사|전기기능사|정보기기운용기능사|제과기능사|제빵기능사|한국사능력검정|[가-힣]{2,8}기사(?=\s?(자격|시험))|기능사|산업기사|컴퓨터활용능력|워드프로세서|ITQ|GTQ|\bMOS\b|자격증(을|를)?\s?(취득함|취득하였|취득했|취득한|획득|땄|땀)|자격(을|를)?\s?(취득|획득)(함|하였|했|한)/g},
+ {id:"A21",sev:"info",name:"'자격증' 언급(명칭·취득 사실 없으면 가능, 문맥 확인)",src:"요령 p.19 3-파 / 연수자료 p.7",re:/자격증/g,alt:"관련 자격증 취득을 위해 노력함"},
  {id:"A13",sev:"err",modes:["subj","beh"],name:()=>MODE==="beh"?"방과후학교 활동":"MOOC·방과후학교",src:()=>MODE==="beh"?"요령 p.159 나":"요령 p.118 바-3)·4)",re:/K-?MOOC|MOOC|KOCW|방과\s?후/gi},
  {id:"A14",sev:"warn",name:()=>isCA()?"자율탐구 산출물(소논문) 실적":"연구보고서(소논문)",src:()=>MODE==="subj"?"요령 p.118 바-5)":MODE==="beh"?"요령 p.159 나":"요령 p.82 바, p.209",re:/소논문|연구\s?보고서|논문/g}
 ];
@@ -568,6 +575,10 @@ function scanOrgs(t,add){
   hit(RE_CO_EN,"warn","상호명 (기업·브랜드·플랫폼)");
   hit(RE_INT,"info","국제기구명 (학습 내용이면 문맥 판단)");
   hit(RE_EDU_SOFT,"info","상호명일 수 있음 (일반 낱말·인명과 겹침, 문맥 판단)");
+  hit(/[가-힣]{2,10}(?:교육원|학원)/g,"warn","기관명 (교육원·학원)");
+  hit(/[가-힣]{1,6}(?:시청|구청|군청|도청)/g,"warn","기관명 (지자체)");
+  hit(/[가-힣]{2,10}(?:발전소|공사|공단)/g,"warn","기관명 (시설·공공기관)");
+  hit(/[가-힣]{2,10}(?:박물관|미술관|과학관)/g,"info","기관명일 수 있음 (학습 장소, 문맥 판단)");
   return spans;
 }
 
@@ -578,7 +589,10 @@ function scan(t,lim){
   const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit,alt:r.alt||""});
   for(const r0 of R){if(r0.modes&&!r0.modes.includes(MODE))continue;
     const r={...r0,name:typeof r0.name==="function"?r0.name():r0.name,src:typeof r0.src==="function"?r0.src():r0.src};
-    r0.re.lastIndex=0;let x;while((x=r0.re.exec(t))){add(r,x.index,x.index+x[0].length,x[0]);if(!x[0].length)r0.re.lastIndex++}}
+    r0.re.lastIndex=0;let x;while((x=r0.re.exec(t))){
+      const overlapsCertificate=r.id==="A21"&&F.some(f=>f.id==="A11"&&x.index<f.end&&x.index+x[0].length>f.start);
+      if(!overlapsCertificate)add(r,x.index,x.index+x[0].length,x[0]);
+      if(!x[0].length)r0.re.lastIndex++}}
   const orgSpans=[];scanOrgs(t,(r,a,b,h)=>{add(r,a,b,h);orgSpans.push([a,b])});
   for(const w of blockedWords()){let i=0;while((i=t.indexOf(w,i))>-1){add({id:"A12",sev:"err",name:"재학 고교를 알 수 있는 내용",src:"요령 p.19 4"},i,i+w.length,w);i+=w.length}}
   {const re=/〔[^〕\n]*〕/g;let y;while((y=re.exec(t)))F.push({id:"T1",sev:"err",name:"패턴 틀 빈칸이 남아 있음 (함닷 점검, 규정 아님)",src:"—",start:y.index,end:y.index+y[0].length,hit:y[0]})}
@@ -592,7 +606,7 @@ function scan(t,lim){
     else if(code>=0xAC00&&code<=0xD7A3&&![16,10].includes((code-0xAC00)%28))F.push({id:"B1",sev:"info",name:"명사형 어미(-ㅁ/-음, ㄹ받침 뒤 -ㄻ)가 아닌 끝맺음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
     if(MODE!=="beh"&&JUDGE.test(se.s)&&!ACT.test(se.s))F.push({id:"B6",sev:"info",name:"근거 행동 없이 평가어만 있는 문장",src:"요령 p.19 5-가",start:se.start,end:se.start+core.length,hit:core.length>22?core.slice(0,22)+"…":core});
   }
-  let x;const sp=/[^가-힣ㄱ-ㆎA-Za-z0-9\s.,()'"\-?!:;\/~〔〕]|%/g;
+  let x;const sp=/[^가-힣ㄱ-ㆎA-Za-z0-9㐀-䶿一-鿿豈-﫿·・‧\s.,()'"\-?!:;\/~〔〕]|%/g;
   while((x=sp.exec(t)))F.push({id:"B2",sev:"info",name:"특수문자",src:"요령 p.30",start:x.index,end:x.index+x[0].length,hit:x[0]});
   const num=/^[ \t]*(?:\d+[.)]|[①-⑳]|[-•*])\s/gm;
   while((x=num.exec(t)))F.push({id:"B2",sev:"info",name:"문단 구분 기호(번호)",src:"요령 p.30",start:x.index,end:x.index+x[0].length,hit:x[0].trim()});
