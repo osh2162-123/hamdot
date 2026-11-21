@@ -265,7 +265,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.4.1</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.5</small></h1>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
         <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
@@ -401,6 +401,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
                 <button data-m="career" aria-pressed="false">진로<small>1500</small></button>
                 <button data-m="beh" aria-pressed="false">행동특성 및 종합의견<small>900</small></button>
               </div>
+              <small>글자 수가 넘친다고 다른 영역으로 옮겨 쓰지 않음(요령 p.28)</small>
               <span class="sp"></span>
               <span>계산식: 한글 등 3Byte, 그 외 1Byte, 엔터 1Byte (엑셀 =(LENB−LEN)*3+(LEN*2−LENB)과 같음, 기재요령 p.208). NEIS가 자동으로 붙이는 과목명·(학기)는 1,500Byte에 들어가지 않음 (NEIS 매뉴얼Ⅰ p.514)</span>
             </div>
@@ -432,7 +433,7 @@ const CONN={"2024-25":[["또한",19],["특히",13],["이를 통해",8],["나아�
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.4.1"; // 2026-11-20
+const APP_VERSION="1.5"; // 2026-11-21
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -618,14 +619,21 @@ function scan(t,lim,student=curSt()){
   // 도서명·저자 범위는 모든 영역에서 셀프 학생부 의심 검사에서 제외합니다.
   const books=[...t.matchAll(/[“"‘'『「<][^”"’'』」>\n]{1,60}[”"’'』」>]\s*\([가-힣A-Za-z][^)]{0,25}\)/g)];
   const selfPatterns=[/(?:^|[\s.])(?:저는|제가|저의|나는|내가|우리 모둠은)\s/g,/(?:“[^”\n]*(?:요|다|니다|어요|아요|죠)”|"[^"\n]*(?:요|다|니다|어요|아요|죠)"|‘[^’\n]*(?:요|다|니다|어요|아요|죠)’|'[^'\n]*(?:요|다|니다|어요|아요|죠)')(?:라고|하고|며|면서)/g];
-  for(const re of selfPatterns)for(const match of t.matchAll(re)){
+  for(const [patternIndex,re] of selfPatterns.entries())for(const match of t.matchAll(re)){
     const start=match.index,end=start+match[0].length;
-    if(!books.some(book=>start<book.index+book[0].length&&end>book.index))add({id:"B10",sev:"warn",name:"셀프 학생부 의심: 학생의 말을 그대로 옮기지 말고 교사가 관찰한 내용으로",src:"요령 p.28 / 연수자료 p.39"},start,end,match[0]);
+    const firstPerson=patternIndex===0||/저는|제가|저의|나는|내가/.test(match[0]);
+    if(!books.some(book=>start<book.index+book[0].length&&end>book.index))add({id:"B10",sev:firstPerson?"warn":"info",name:firstPerson?"셀프 학생부 의심: 학생의 말을 그대로 옮기지 말고 교사가 관찰한 내용으로":"직접 인용: 학생의 말이면 교사 관점으로 바꾸기(명언·도서 인용은 해당 없음)",src:"요령 p.28 / 연수자료 p.39"},start,end,match[0]);
   }
   if(MODE==="auto"){
     for(const match of t.matchAll(/(?:학급|학년|전교)?\s?(?:자치회|학생회)?\s?(?:부회장|회장|부반장|반장)/g)){
       const start=match.index,end=start+match[0].length;
-      if(!/\(\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?[~∼-]/.test(t.slice(end,end+40)))add({id:"C1",sev:"warn",name:"임원 재임기간: ( ) 안에 함께 쓰기, 예: 학급자치회 회장(2026.03.01.-2027.02.28.)",src:"요령 p.83"},start,end,match[0]);
+      const context=t.slice(end,end+12);
+      if(!/으로서|로서|으로 활동|으로|을 맡|를 맡|직을|역할|\(/.test(context))continue;
+      const period=t.slice(end,end+40);
+      const hyphenPeriod=/\(\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?-\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?\)/.test(period);
+      const wavePeriod=/\(\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?[~∼]\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?\)/.test(period);
+      if(wavePeriod)add({id:"C1",sev:"info",name:"재임기간 날짜 구분은 하이픈(-)으로: 예: (2026.08.13.-2027.02.28)",src:"요령 p.83"},start,end,match[0]);
+      else if(!hyphenPeriod)add({id:"C1",sev:"warn",name:"임원 재임기간: ( ) 안에 함께 쓰기, 예: 학급자치회 회장(2026.08.13.-2027.02.28)",src:"요령 p.83"},start,end,match[0]);
       if(!/학급|학년|전교/.test(match[0])&&/회장/.test(match[0]))add({id:"C1",sev:"info",name:"임원 종류(학급·학년·전교)를 함께 쓰기",src:"요령 p.83"},start,end,match[0]);
     }
   }
@@ -636,6 +644,13 @@ function scan(t,lim,student=curSt()){
   if(MODE==="career"&&t.trim()&&!hopeOf(student).trim())add({id:"C2",sev:"info",name:"희망분야 미입력: 정하지 못한 학생도 '진로탐색 중임.' 등으로 입력",src:"요령 p.85"},-1,-1,"");
   if(MODE==="subj"&&/^특이사항\s?없음\.?$/.test(t.trim()))add({id:"C4",sev:"info",name:"특이사항 없음: 학업성적관리위원회 심의 대상인지 확인",src:"연수자료 p.17"},0,t.length,t);
   if(MODE==="beh")for(const match of t.matchAll(/부족|미흡|산만|불성실|무기력|엎드려|소극적|반항|게으/g))add({id:"C3",sev:"info",name:"부정적 내용: 누가기록 근거를 남겨 두기 권장(쓸 수는 있음)",src:"요령 p.158"},match.index,match.index+match[0].length,match[0]);
+  if(CLS&&student){
+    const repeated=new Map(dupMap(student,t).filter(d=>d.who.size>=3&&d.who.has(student.no)).map(d=>[d.s.replace(/\s+/g,""),d.who.size]));
+    for(const sentence of sentences(t)){
+      const count=repeated.get(sentence.s.replace(/\s+/g,""));
+      if(count)add({id:"C5",sev:"info",name:`같은 문장이 ${count}명에게 있음: 개별적 특성이 드러나도록`,src:"연수자료 p.32, 39"},sentence.start,sentence.end,sentence.s);
+    }
+  }
   return F;
 }
 
@@ -931,9 +946,9 @@ function openStudent(i){
   el.src.value=CLS.students[cur].text;el.hope.value=CLS.students[cur].hope||"";$("edSub").textContent="학급 파일의 J열(세부능력 및 특기사항)을 편집 중";
   update();el.src.scrollTop=0;
 }
-function dupMap(){
+function dupMap(editedStudent=null,editedText=""){
   const m=new Map();
-  CLS.students.forEach(st=>{for(const se of sentences(st.text)){const k=se.s.replace(/\s+/g,"");if(k.length<15)continue;if(!m.has(k))m.set(k,{s:se.s,who:new Set()});m.get(k).who.add(st.no)}});
+  CLS.students.forEach(st=>{for(const se of sentences(st===editedStudent?editedText:st.text)){const k=se.s.replace(/\s+/g,"");if(k.length<15)continue;if(!m.has(k))m.set(k,{s:se.s,who:new Set()});m.get(k).who.add(st.no)}});
   return [...m.values()].filter(v=>v.who.size>1);
 }
 function renderClassView(){
