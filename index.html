@@ -386,6 +386,7 @@ svg.chart .grid{stroke:var(--line);stroke-width:1}
               <div class="stat">영문·숫자·공백 <b id="single">0</b> × 1</div>
               <div class="stat" id="remain"></div>
               <div class="stat" id="exNote"></div>
+              <div class="stat" id="yearNote" hidden>학년 전체 합산 기준입니다. 1학기 내용과 합쳐서 세세요.</div>
             </div>
             <div class="bar" id="bar"><i id="fill"></i></div>
             <div class="scale" id="scale"><span>0</span><span>500</span><span>1,000</span><span>1,500 Byte</span></div>
@@ -575,16 +576,16 @@ function scanOrgs(t,add){
   hit(RE_CO_EN,"warn","상호명 (기업·브랜드·플랫폼)");
   hit(RE_INT,"info","국제기구명 (학습 내용이면 문맥 판단)");
   hit(RE_EDU_SOFT,"info","상호명일 수 있음 (일반 낱말·인명과 겹침, 문맥 판단)");
-  hit(/[가-힣]{2,10}(?:교육원|학원)/g,"warn","기관명 (교육원·학원)");
-  hit(/[가-힣]{1,6}(?:시청|구청|군청|도청)/g,"warn","기관명 (지자체)");
-  hit(/[가-힣]{2,10}(?:발전소|공사|공단)/g,"warn","기관명 (시설·공공기관)");
+  hit(/[가-힣]{2,10}교육원|(?<!입)[가-힣]{1,9}(?<!입)학원(?!서|폭력)/g,"warn","기관명 (교육원·학원)");
+  hit(/[가-힣]{1,6}(?:(?<!영상)시청|구청|군청)(?!하|했|한|함|후|자|률|각)|(?:경기|강원|강원특별자치|충청북|충청남|충북|충남|전라북|전라남|전북|전북특별자치|전남|경상북|경상남|경북|경남|제주|제주특별자치)도청/g,"warn","기관명 (지자체)");
+  hit(/[가-힣]{2,10}발전소/g,"warn","기관명 (시설·공공기관)");
   hit(/[가-힣]{2,10}(?:박물관|미술관|과학관)/g,"info","기관명일 수 있음 (학습 장소, 문맥 판단)");
   return spans;
 }
 
 function blockedWords(){return el.blocked.value.split(/[,，]/).map(v=>v.trim()).filter(Boolean)}
 
-function scan(t,lim){
+function scan(t,lim,student=curSt()){
   const F=[];
   const add=(r,start,end,hit,extra)=>F.push({id:r.id,sev:r.sev,name:extra||r.name,src:r.src,start,end,hit,alt:r.alt||""});
   for(const r0 of R){if(r0.modes&&!r0.modes.includes(MODE))continue;
@@ -602,7 +603,7 @@ function scan(t,lim){
   for(const se of sentences(t)){
     const core=se.s.replace(/[.\s"'”’)\]]+$/,"");const last=core.slice(-1);const code=last.charCodeAt(0);
     const tailS=se.start+core.length-Math.min(3,core.length),tailE=se.start+core.length;
-    if(/[다요까]$/.test(core))F.push({id:"B1",sev:"warn",name:"명사형 어미로 끝나지 않음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
+    if(/[다요까]$/.test(core))F.push({id:"B1",sev:"warn",name:"명사형 어미로 끝나지 않음"+(/(?:습니다|입니다)$/.test(core)?"(AI 답변을 그대로 붙여 넣으면 생기기 쉬움)":""),src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
     else if(code>=0xAC00&&code<=0xD7A3&&![16,10].includes((code-0xAC00)%28))F.push({id:"B1",sev:"info",name:"명사형 어미(-ㅁ/-음, ㄹ받침 뒤 -ㄻ)가 아닌 끝맺음",src:"요령 p.30",start:tailS,end:tailE,hit:core.slice(-4)});
     if(MODE!=="beh"&&JUDGE.test(se.s)&&!ACT.test(se.s))F.push({id:"B6",sev:"info",name:"근거 행동 없이 평가어만 있는 문장",src:"요령 p.19 5-가",start:se.start,end:se.start+core.length,hit:core.length>22?core.slice(0,22)+"…":core});
   }
@@ -614,6 +615,27 @@ function scan(t,lim){
   while((x=en.exec(t))){if(!OKEN.has(x[0])&&!orgSpans.some(([a,b])=>x.index>=a&&x.index<b))F.push({id:"B3",sev:"info",name:"영문 표기 (허용 범위 확인)",src:"요령 p.28 ③",start:x.index,end:x.index+x[0].length,hit:x[0],alt:ALT_B3[x[0]]||""})}
   const bk=/[“"‘'『「<][^”"’'』」>\n]{1,60}[”"’'』」>]\s*\([가-힣A-Za-z][^)]{0,25}\)/g;
   while(MODE!=="beh"&&(x=bk.exec(t)))F.push({id:"B9",sev:"info",name:"도서 언급: 독후활동 외 교육활동이 있었는지 확인",src:"요령 p.157 다, 길잡이 p.153",start:x.index,end:x.index+x[0].length,hit:x[0].length>24?x[0].slice(0,24)+"…":x[0]});
+  // 도서명·저자 범위는 모든 영역에서 셀프 학생부 의심 검사에서 제외합니다.
+  const books=[...t.matchAll(/[“"‘'『「<][^”"’'』」>\n]{1,60}[”"’'』」>]\s*\([가-힣A-Za-z][^)]{0,25}\)/g)];
+  const selfPatterns=[/(?:^|[\s.])(?:저는|제가|저의|나는|내가|우리 모둠은)\s/g,/(?:“[^”\n]*(?:요|다|니다|어요|아요|죠)”|"[^"\n]*(?:요|다|니다|어요|아요|죠)"|‘[^’\n]*(?:요|다|니다|어요|아요|죠)’|'[^'\n]*(?:요|다|니다|어요|아요|죠)')(?:라고|하고|며|면서)/g];
+  for(const re of selfPatterns)for(const match of t.matchAll(re)){
+    const start=match.index,end=start+match[0].length;
+    if(!books.some(book=>start<book.index+book[0].length&&end>book.index))add({id:"B10",sev:"warn",name:"셀프 학생부 의심: 학생의 말을 그대로 옮기지 말고 교사가 관찰한 내용으로",src:"요령 p.28 / 연수자료 p.39"},start,end,match[0]);
+  }
+  if(MODE==="auto"){
+    for(const match of t.matchAll(/(?:학급|학년|전교)?\s?(?:자치회|학생회)?\s?(?:부회장|회장|부반장|반장)/g)){
+      const start=match.index,end=start+match[0].length;
+      if(!/\(\s?\d{4}\.\s?\d{1,2}\.\s?\d{1,2}\.?\s?[~∼-]/.test(t.slice(end,end+40)))add({id:"C1",sev:"warn",name:"임원 재임기간: ( ) 안에 함께 쓰기, 예: 학급자치회 회장(2026.03.01.-2027.02.28.)",src:"요령 p.83"},start,end,match[0]);
+      if(!/학급|학년|전교/.test(match[0])&&/회장/.test(match[0]))add({id:"C1",sev:"info",name:"임원 종류(학급·학년·전교)를 함께 쓰기",src:"요령 p.83"},start,end,match[0]);
+    }
+  }
+  const format=/\*\*[^*]+\*\*|^#{1,3}\s|\p{Extended_Pictographic}/mu.exec(t);
+  const dots=[...t.matchAll(/[·・‧]/g)];
+  const formatHit=format||(dots.length>=3?dots[0]:null);
+  if(formatHit)add({id:"B11",sev:"info",name:"AI 답변 형식 흔적(확인 권장): AI 결과물은 그대로 입력할 수 없음, 관찰 사실과 맞는지 확인",src:"요령 p.19"},formatHit.index,formatHit.index+formatHit[0].length,formatHit[0]);
+  if(MODE==="career"&&t.trim()&&!hopeOf(student).trim())add({id:"C2",sev:"info",name:"희망분야 미입력: 정하지 못한 학생도 '진로탐색 중임.' 등으로 입력",src:"요령 p.85"},-1,-1,"");
+  if(MODE==="subj"&&/^특이사항\s?없음\.?$/.test(t.trim()))add({id:"C4",sev:"info",name:"특이사항 없음: 학업성적관리위원회 심의 대상인지 확인",src:"연수자료 p.17"},0,t.length,t);
+  if(MODE==="beh")for(const match of t.matchAll(/부족|미흡|산만|불성실|무기력|엎드려|소극적|반항|게으/g))add({id:"C3",sev:"info",name:"부정적 내용: 누가기록 근거를 남겨 두기 권장(쓸 수는 있음)",src:"요령 p.158"},match.index,match.index+match[0].length,match[0]);
   return F;
 }
 
@@ -703,6 +725,7 @@ function renderMeter(t){
   const fill=$("fill");fill.style.width=Math.min(100,b/L*100)+"%";fill.classList.toggle("over",b>L);
   $("scale").innerHTML=[0,L/3,L*2/3,L].map((v,i)=>`<span>${Math.round(v).toLocaleString()}${i===3?" Byte":""}</span>`).join("");
   const ex=MODES[MODE].max-L;$("exNote").textContent=ex?`${MODE==="club"?"부서명·시간":"희망분야"} ${ex}Byte를 빼고 셈`:"";$("goal").max=L;
+  $("yearNote").hidden=!isCA();
   const g=parseInt($("goal").value,10);let gm=$("bar").querySelector(".goal");
   if(g>0&&g<=L){if(!gm){gm=document.createElement("span");gm.className="goal";$("bar").appendChild(gm)}gm.style.left=(g/L*100)+"%";gm.title="목표 "+g+" Byte"}else if(gm)gm.remove();
 }
@@ -888,7 +911,7 @@ async function buildClass(){
   return zip.generateAsync({type:"blob",compression:"DEFLATE"});
 }
 
-function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st));if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
+function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st),st);if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
 const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj,CLS.students.length].join("|")};
 function saveDrafts(){if(!CLS)return;const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if(st.hope)h[st.r]=st.hope});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
 function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
@@ -917,14 +940,15 @@ function renderClassView(){
   if(!CLS)return;
   const dups=dupMap();const dupBy={};dups.forEach(d=>d.who.forEach(n=>{dupBy[n]=(dupBy[n]||0)+1}));
   let over=0,empty=0;
-  const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text,LIM_FOR(st)):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
+  const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text,LIM_FOR(st),st):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
     const b=byteOf(st.text).b;if(b>LIM_FOR(st))over++;if(!st.text.trim())empty++;
     const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
     return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td>${pill}</td></tr>`}).join("");
   const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
   const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · 글자 수 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
   const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
-  $("classView").innerHTML=sum+head+dl;
+  const emptyAdvice=MODE==="beh"?'<div class="empty-note">행특은 모든 학생 입력. 관찰하지 못한 경우에도 \'관찰 기회 없음.\' 등으로 입력</div>':"";
+  $("classView").innerHTML=sum+emptyAdvice+head+dl;
 }
 function setView(v){view=v;$("tabOne").setAttribute("aria-selected",v==="one");$("tabSp").setAttribute("aria-selected",v==="sp");$("tabAll").setAttribute("aria-selected",v==="all");$("findings").hidden=v!=="one";$("spellView").hidden=v!=="sp";$("classView").hidden=v!=="all";if(v==="all")renderClassView()}
 $("tabOne").addEventListener("click",()=>setView("one"));
