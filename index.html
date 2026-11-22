@@ -144,6 +144,10 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .classinfo{font-size:var(--fs-5);color:var(--muted)}
 .classinfo b{color:var(--ink);font-weight:600}
 .roster{display:flex;flex-direction:column;gap:8px;flex:none}
+.list-fields{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.list-fields label{display:inline-flex;align-items:center;gap:4px}
+.list-fields input{width:7em}
+.list-fields input[type=number]{width:4em}
 .nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .nav strong{font-size:var(--fs-3);font-weight:var(--fw-3)}
 .nav .who{font-size:var(--fs-5);color:var(--muted)}
@@ -247,8 +251,10 @@ button:active,a.ghost:active{transform:scale(.97)}
   .editor .panel-head{padding:6px 12px;flex:none}
   .editor .panel-head .sub{min-width:0;max-width:55%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   .editor .panel-body{min-height:0;overflow:hidden;padding:8px 12px;gap:6px}
+  .editor .panel-body:has(#listFields:not([hidden])){overflow:auto}
   .field{flex:1 0 160px;min-height:160px}
   .tpl,.roster{flex:0 1 auto;min-height:24px;max-height:64px;overflow:auto}
+  .roster:has(#listFields:not([hidden])){max-height:150px}
   .tpl-hint{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .roster .nums{flex:none}
   .meter{flex:none;gap:4px;display:grid;grid-template-columns:minmax(0,1fr) auto}
@@ -296,7 +302,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6.2</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.7</small></h1>
       <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
       <div class="settings-wrap">
         <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
@@ -347,6 +353,7 @@ button:active,a.ghost:active{transform:scale(.97)}
           <h3 id="ed-title">세특 입력</h3>
           <span class="sub" id="edSub">예시 문장이 들어 있습니다. 지우고 붙여 넣으세요.</span>
           <span style="flex:1"></span>
+          <button class="ghost" id="toggleList" aria-pressed="false">내 목록으로 쓰기</button>
           <button class="ghost" id="clearBtn">지우기</button>
         </div>
         <div class="panel-body">
@@ -354,10 +361,19 @@ button:active,a.ghost:active{transform:scale(.97)}
             <div class="nav">
               <button class="ghost" id="prevS" aria-label="이전 학생">◀ 이전</button>
               <strong id="curS"></strong><span class="who" id="curWho"></span>
+              <button class="ghost" id="addListStudent" hidden>+ 학생 추가</button>
               <button class="ghost" id="nextS" aria-label="다음 학생">다음 ▶</button>
               <span style="flex:1"></span>
               <div class="legend2"><span class="l-empty">미입력</span><span class="l-ok">통과</span><span class="l-warn">확인</span><span class="l-err">오류·초과</span></div>
             </div>
+            <div class="list-fields" id="listFields" hidden>
+              <label>반 <input id="listBan" type="text"></label>
+              <label>번호 <input id="listNumber" type="number" min="1" step="1"></label>
+              <label>이름 <input id="listName" type="text" autocomplete="off"></label>
+              <small>이름은 이 탭에서만 기억합니다.</small>
+              <button class="ghost" id="deleteListStudent">삭제</button>
+            </div>
+            <small id="listNamesMissing" hidden>이름은 저장하지 않아 비어 있습니다. 엑셀로 저장해 둔 파일을 참고해 다시 넣어 주세요.</small>
             <div class="nums" id="nums"></div>
           </div>
           <div class="tpl">
@@ -415,6 +431,8 @@ button:active,a.ghost:active{transform:scale(.97)}
         <div class="tally" id="tally"></div>
         <span class="spacer"></span>
         <button class="btn" id="saveX" hidden>NEIS 업로드용 엑셀 저장</button>
+        <button class="btn" id="saveListX" hidden>새 엑셀로 저장</button>
+        <small id="saveListHint" hidden>NEIS 업로드용이 아닙니다. 보관·검토용입니다.</small>
       </div>
       <div class="sheet-body" id="sheetBody">
       <div class="findings" id="findings"></div>
@@ -453,7 +471,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.6.2"; // 2026-11-22
+const APP_VERSION="1.7"; // 2026-11-22
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -703,7 +721,8 @@ document.addEventListener("keydown",event=>{if(event.key==="Escape")closeSetting
 document.addEventListener("click",event=>{if(!event.target.closest(".settings-wrap"))closeSettings()});
 
 /* 학생 작업 내용은 선택한 저장소에서만 유지합니다. */
-const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:");
+const isListNameKey=k=>k.startsWith("setuk-list-names:");
+const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:")||k.startsWith("setuk-list:")||isListNameKey(k);
 function draftKeys(storage){return Object.keys(storage).filter(isDraftKey)}
 let persistDrafts=store.get("setuk-persist")==="1";
 let storageFailed=false;
@@ -714,7 +733,7 @@ const draftStore={
 function changePersistence(on){
   try{
     const source=on?sessionStorage:localStorage,target=on?localStorage:sessionStorage;
-    const keys=draftKeys(source);
+    const keys=draftKeys(source).filter(k=>!isListNameKey(k));
     keys.forEach(k=>target.setItem(k,source.getItem(k)));
     keys.forEach(k=>source.removeItem(k));
     localStorage.setItem("setuk-persist",on?"1":"0");
@@ -726,8 +745,9 @@ function changePersistence(on){
 function eraseWork(){
   try{[localStorage,sessionStorage].forEach(storage=>draftKeys(storage).forEach(k=>storage.removeItem(k)))}
   catch(e){$("storageStatus").textContent="저장 내용을 지우지 못했습니다.";return}
-  CLS=null;cur=-1;classMode(false);el.src.value="";el.hope.value="";
+  CLS=null;cur=-1;suspendedList=null;listChanges.clear();classMode(false);restoreExtraSettings();el.src.value="";el.hope.value="";
   paintBackdrop("",[]);renderFindings([]);renderMeter("");renderDiag("");renderSpell("");
+  previewSelection=null;renderPreview();
   $("legacyDrafts").hidden=true;$("edSub").textContent="";
   $("storageStatus").textContent="학생 작업 내용을 지웠습니다.";
 }
@@ -747,8 +767,9 @@ $("importLegacy").addEventListener("click",()=>resolveLegacy("session"));
 $("eraseLegacy").addEventListener("click",()=>resolveLegacy("erase"));
 $("persistLegacy").addEventListener("click",()=>resolveLegacy("persist"));
 window.addEventListener("beforeunload",e=>{
-  const changed=CLS&&CLS.students.some(st=>st.text!==st.exportedText||(st.exportedHope!==undefined&&st.hope!==st.exportedHope));
-  const sessionWork=!persistDrafts&&((el.src.value&&el.src.value!==SAMPLE)||el.hope.value||CLS&&CLS.students.some(st=>st.text||st.hope));
+  const neisClass=CLS&&CLS.source!=="list";
+  const changed=[...listChanges.values()].some(state=>state.current!==state.exported)||neisClass&&CLS.students.some(st=>st.text!==st.exportedText||(st.exportedHope!==undefined&&st.hope!==st.exportedHope));
+  const sessionWork=!persistDrafts&&CLS?.source!=="list"&&((el.src.value&&el.src.value!==SAMPLE)||el.hope.value||neisClass&&CLS.students.some(st=>st.text||st.hope));
   if(changed||sessionWork||storageFailed){e.preventDefault();e.returnValue="닫으면 작업 내용이 사라집니다."}
 });
 
@@ -1008,10 +1029,10 @@ async function buildClass(){
 
 function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st),st);if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
 const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj||(CLS.separateClass?[CLS.detected,m.classBan,...(CLS.detected==="club"?[CLS.sheet]:[])].join(":"):""),CLS.students.length].join("|")};
-function saveDrafts(){if(!CLS)return;const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if((st.hope||"")!==(st.origHope||""))h[st.r]=st.hope||""});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
+function saveDrafts(){if(!CLS)return;if(CLS.source==="list"){saveListDraft(CLS);return;}const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if((st.hope||"")!==(st.origHope||""))h[st.r]=st.hope||""});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
 function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
 
-function label(st){return st.no+"번"}
+function label(st){return (st.number??st.no)+"번"}
 function who(st){return [st.ban&&("반/번호 "+st.ban),st.name,st.stat&&st.stat!=="재학"?st.stat:""].filter(Boolean).join(" · ")}
 function renderRoster(){
   if(!CLS)return;
@@ -1019,12 +1040,18 @@ function renderRoster(){
   const st=CLS.students[cur];
   $("curS").textContent=label(st)+" / "+CLS.students.length+"명";
   const extra=st.stat&&st.stat!=="재학"?" — 학적변동일까지의 내용을 입력 (NEIS 매뉴얼Ⅰ p.513)":"";
-  $("curWho").textContent=(who(st)||"성명·반/번호 칸이 비어 있는 파일")+extra;
+  $("curWho").textContent=CLS.source==="list"?"":(who(st)||"성명·반/번호 칸이 비어 있는 파일")+extra;
 }
 function openStudent(i){
   if(!CLS)return;cur=Math.max(0,Math.min(CLS.students.length-1,i));
   if(CLS.students[cur].club!==undefined)el.club.value=CLS.students[cur].club;
   el.src.value=CLS.students[cur].text;el.hope.value=CLS.students[cur].hope||"";$("edSub").textContent=`학급 파일의 ${CLS.J}열(${MODES[MODE].name})을 편집 중`;
+  if(CLS.source==="list"){
+    const st=CLS.students[cur];
+    $("listBan").value=st.classBan;$("listNumber").value=st.number;$("listName").value=st.name;
+    el.hours.value=CLS.hours;
+    $("edSub").textContent="내 목록에서 작성 중";
+  }
   update();el.src.scrollTop=0;
 }
 function dupMap(editedStudent=null,editedText=""){
@@ -1039,10 +1066,10 @@ function renderClassView(){
   const rows=CLS.students.map((st,i)=>{const F=st.text.trim()?scan(st.text,LIM_FOR(st),st):[];const c={err:0,warn:0,info:0};F.forEach(f=>c[f.sev]++);
     const b=byteOf(st.text).b;if(b>LIM_FOR(st))over++;if(!st.text.trim())empty++;
     const s=stStatus(st);const pill=s==="empty"?'<span class="pill warn">미입력</span>':s==="err"?'<span class="pill err">오류</span>':s==="warn"?'<span class="pill warn">확인</span>':'<span class="pill ok">통과</span>';
-    return `<tr class="row" data-i="${i}"><td class="num">${st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td>${pill}</td></tr>`}).join("");
+    return `<tr class="row" data-i="${i}"><td class="num">${st.number??st.no}</td><td>${esc(st.ban||"—")}</td><td>${esc(st.name||"—")}</td><td>${esc(st.stat||"")}</td><td class="num"${b>LIM_FOR(st)?' style="color:var(--err);font-weight:600"':""}>${b.toLocaleString()}</td><td class="num">${c.err||""}</td><td class="num">${c.warn||""}</td><td class="num">${c.info||""}</td><td class="num">${dupBy[st.no]||""}</td><td>${pill}</td></tr>`}).join("");
   const head=`<table><thead><tr><th>번호</th><th>반/번호</th><th>성명</th><th>학적</th><th>Byte</th><th>오류</th><th>확인</th><th>참고</th><th>중복 문장</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table>`;
   const sum=`<div class="empty-note">${CLS.students.length}명 · 미입력 ${empty}명 (모든 학생 입력이 원칙, 기재요령 p.117 나) · 글자 수 초과 ${over}명 · 학생 간 같은 문장 ${dups.length}건</div>`;
-  const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].join(", ")}번</span></div>`).join("")}</div>`:"";
+  const dl=dups.length?`<div class="dups"><h4>학생 간 같은 문장 (15자 이상)</h4>${dups.slice(0,30).map(d=>`<div>${esc(d.s.length>60?d.s.slice(0,60)+"…":d.s)} <span class="id">— ${[...d.who].map(id=>CLS.students.find(st=>st.no===id)?.number??id).join(", ")}번</span></div>`).join("")}</div>`:"";
   const emptyAdvice=MODE==="beh"?'<div class="empty-note">행특은 모든 학생 입력. 관찰하지 못한 경우에도 \'관찰 기회 없음.\' 등으로 입력</div>':"";
   $("classView").innerHTML=sum+emptyAdvice+head+dl;
 }
@@ -1056,13 +1083,20 @@ $("prevS").addEventListener("click",()=>openStudent(cur-1));
 $("nextS").addEventListener("click",()=>openStudent(cur+1));
 
 function classMode(on){
-  $("roster").hidden=!on;$("tabAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
+  const list=on&&CLS?.source==="list",neis=on&&!list;
+  $("roster").hidden=!on;$("tabAll").hidden=!on;$("saveX").hidden=!neis;$("closeX").hidden=!neis;
+  $("toggleList").hidden=neis;$("toggleList").setAttribute("aria-pressed",String(list));
+  $("toggleList").textContent=list?"내 목록 닫기":"내 목록으로 쓰기";
+  for(const id of ["listFields","addListStudent","saveListX","saveListHint"])$(id).hidden=!list;
+  $("listNamesMissing").hidden=!list||!CLS.namesMissing;
+  if(!list)$("listName").value="";
   if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 세특·창체·행특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
 }
 $("xlsx").addEventListener("change",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
   try{
     const data=await readClass(await f.arrayBuffer());
+    if(CLS?.source==="list"){suspendedList={area:CLS.area,index:cur};restoreExtraSettings();}
     CLS={...data,fileName:f.name};cur=-1;CLS.students.forEach(st=>{st.exportedText=st.orig;st.exportedHope=st.origHope});const m=CLS.students[0];
     if(data.detected==="ca"){if(!isCA())setArea("auto")}else if(data.detected!==MODE)setArea(data.detected);
     const info=MODE==="subj"?[m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "):[m.year&&m.year+"학년도",m.grade&&m.grade+"학년",m.classBan&&m.classBan+"반"].filter(Boolean).join(" ")+" · "+MODES[MODE].name;
@@ -1078,9 +1112,14 @@ $("xlsx").addEventListener("change",async e=>{
     openStudent(0);setView("all");
   }catch(err){note(esc(err.message||"파일을 읽지 못했습니다."))}
 });
-$("closeX").addEventListener("click",()=>{CLS=null;cur=-1;classMode(false);el.hope.value=draftStore.get("setuk-hope")||"";const d=draftStore.get("setuk-draft");el.src.value=d||"";$("edSub").textContent=d?"이전에 입력하던 내용입니다.":"";update()});
+$("closeX").addEventListener("click",()=>{
+  if(suspendedList){
+    const {area,index}=suspendedList;suspendedList=null;openList(area,index);return;
+  }
+  openSingle();
+});
 $("saveX").addEventListener("click",async()=>{
-  if(!CLS)return;
+  if(!CLS||CLS.source==="list")return;
   const over=CLS.students.filter(st=>byteOf(st.text).b>LIM_FOR(st)).map(st=>st.no);
   const fname=CLS.fileName.replace(/\.xlsx$/i,"")+"_세특입력.xlsx";
   try{
@@ -1097,6 +1136,160 @@ $("saveX").addEventListener("click",async()=>{
     else if(err&&err.code==="rate_limited")note("저장 확인 창이 이미 열려 있습니다. 그 창을 먼저 닫아 주세요.");
     else note("저장하지 못했습니다"+(err&&err.message?": "+esc(err.message):"."));
   }
+});
+
+/* ---------- 내 목록 ---------- */
+let suspendedList=null;
+const listChanges=new Map();
+const listKey=area=>"setuk-list:"+area;
+const listNamesKey=area=>"setuk-list-names:"+area;
+function parseDraft(value,fallback){
+  try{return JSON.parse(value)??fallback;}catch(_){return fallback;}
+}
+function newListStudent(no,classBan="",number=1){
+  return {no,classBan,number,ban:classBan?classBan+"/"+number:String(number),name:"",text:"",hope:"",club:""};
+}
+function listData(list){
+  return {
+    hours:list.hours,
+    students:list.students.map(({no,classBan,number,text,hope,club})=>({no,classBan,number,text,hope,club}))
+  };
+}
+function listSnapshot(list){
+  return JSON.stringify([listData(list),list.students.map(st=>st.name)]);
+}
+function saveListDraft(list){
+  const {area}=list;
+  draftStore.set(listKey(area),JSON.stringify(listData(list)));
+  try{
+    const key=listNamesKey(area);
+    if(!list.namesMissing)sessionStorage.setItem(key,JSON.stringify(Object.fromEntries(list.students.map(st=>[st.no,st.name]))));
+  }catch(_){
+    storageFailed=true;
+    $("storageStatus").textContent="이름을 이 탭에 보관하지 못했습니다. 엑셀로 저장해 주세요.";
+  }
+  listChanges.get(area).current=listSnapshot(list);
+}
+function restoreExtraSettings(){
+  el.club.value=store.get("setuk-club")||"";
+  el.hours.value=store.get("setuk-hours")||"";
+}
+function openSingle(){
+  CLS=null;cur=-1;classMode(false);restoreExtraSettings();
+  el.hope.value=draftStore.get("setuk-hope")||"";
+  el.src.value=draftStore.get("setuk-draft")||"";
+  $("edSub").textContent=el.src.value?"이전에 입력하던 내용입니다.":"";
+  update();
+}
+function openList(area,index=0){
+  const data=parseDraft(draftStore.get(listKey(area)),{});
+  let rawNames=null;
+  try{rawNames=sessionStorage.getItem(listNamesKey(area));}catch(_){}
+  const names=parseDraft(rawNames,{});
+  const hasStudents=Array.isArray(data.students)&&data.students.length>0;
+  const students=hasStudents?data.students.map(({no,classBan,number,text,hope,club})=>({
+    ...newListStudent(no,classBan,number),text,hope,club,name:names[no]||""
+  })):[newListStudent(1)];
+  CLS={source:"list",area,students,hours:data.hours||"",namesMissing:hasStudents&&rawNames===null};
+  cur=-1;
+  if(!listChanges.has(area)){
+    const snapshot=listSnapshot(CLS);
+    listChanges.set(area,{current:snapshot,exported:snapshot});
+  }
+  if(MODE!==area)setArea(area);
+  note("");classMode(true);
+  $("classInfo").textContent="내 목록 · "+MODES[area].name;
+  openStudent(index);
+}
+$("toggleList").addEventListener("click",()=>{
+  if(CLS?.source==="list")openSingle();
+  else if(!CLS)openList(MODE);
+});
+$("addListStudent").addEventListener("click",()=>{
+  if(CLS?.source!=="list")return;
+  const last=CLS.students.at(-1);
+  const id=Math.max(...CLS.students.map(st=>st.no))+1;
+  CLS.students.push(newListStudent(id,last.classBan,last.number+1));
+  openStudent(CLS.students.length-1);
+});
+$("deleteListStudent").addEventListener("click",()=>{
+  if(CLS?.source!=="list"||!confirm("이 학생을 내 목록에서 삭제할까요?"))return;
+  CLS.students.splice(cur,1);
+  if(!CLS.students.length)CLS.students.push(newListStudent(1));
+  openStudent(cur);
+});
+for(const id of ["listBan","listNumber","listName"]){
+  $(id).addEventListener("input",event=>{
+    if(CLS?.source!=="list")return;
+    const st=curSt();
+    const {value,valueAsNumber}=event.target;
+    if(id==="listBan")st.classBan=value;
+    if(id==="listNumber"){
+      if(!Number.isSafeInteger(valueAsNumber)||valueAsNumber<1||valueAsNumber>=Number.MAX_SAFE_INTEGER)return;
+      st.number=valueAsNumber;
+    }
+    if(id==="listName"){
+      st.name=value;CLS.namesMissing=false;$("listNamesMissing").hidden=true;
+    }
+    st.ban=st.classBan?st.classBan+"/"+st.number:String(st.number);
+    update();
+  });
+}
+$("listNumber").addEventListener("blur",()=>{if(CLS?.source==="list")$("listNumber").value=curSt().number;});
+
+async function buildListWorkbook(list){
+  const area=MODES[list.area].name;
+  const headers=["반","번호","이름","영역","특기사항"];
+  if(list.area==="career")headers.push("희망분야");
+  if(list.area==="club")headers.push("부서명");
+  headers.push("바이트","한도","오류","확인","참고");
+  const rows=list.students.map(st=>{
+    const limit=LIM_FOR(st);
+    const counts={err:0,warn:0,info:0};
+    scan(st.text,limit,st).forEach(f=>counts[f.sev]++);
+    const values=[st.classBan,st.number,st.name,area,st.text];
+    if(list.area==="career")values.push(st.hope);
+    if(list.area==="club")values.push(st.club);
+    return [...values,byteOf(st.text).b,limit,counts.err,counts.warn,counts.info];
+  });
+  const xmlText=value=>esc(String(value).replace(/\r\n?/g,"\n").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]/g,"").replace(/_x[0-9a-f]{4}_/gi,match=>"_x005F_"+match.slice(1)));
+  const sheetRows=[headers,...rows].map((row,i)=>{
+    const cells=row.map((value,j)=>{
+      const ref=String.fromCharCode(65+j)+(i+1);
+      if(typeof value==="number")return `<c r="${ref}"><v>${value}</v></c>`;
+      return `<c r="${ref}"${i&&j===4?' s="1"':""} t="inlineStr"><is><t xml:space="preserve">${xmlText(value)}</t></is></c>`;
+    }).join("");
+    return `<row r="${i+1}">${cells}</row>`;
+  }).join("");
+  const relNS="http://schemas.openxmlformats.org/package/2006/relationships";
+  const contentType="application/vnd.openxmlformats-officedocument.spreadsheetml.";
+  const zip=new JSZip();
+  zip.file("[Content_Types].xml",`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="${contentType}sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${contentType}worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="${contentType}styles+xml"/></Types>`);
+  zip.file("_rels/.rels",`<Relationships xmlns="${relNS}"><Relationship Id="rId1" Type="${NS_R}/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+  zip.file("xl/workbook.xml",`<workbook xmlns="${NS_M}" xmlns:r="${NS_R}"><sheets><sheet name="${xmlText(area).replace(/"/g,"&quot;")}" sheetId="1" r:id="rId1"/></sheets></workbook>`);
+  zip.file("xl/_rels/workbook.xml.rels",`<Relationships xmlns="${relNS}"><Relationship Id="rId1" Type="${NS_R}/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS_R}/styles" Target="styles.xml"/></Relationships>`);
+  zip.file("xl/styles.xml",`<styleSheet xmlns="${NS_M}"><fonts count="1"><font/></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+  zip.file("xl/worksheets/sheet1.xml",`<worksheet xmlns="${NS_M}"><cols><col min="5" max="5" width="65" customWidth="1"/></cols><sheetData>${sheetRows}</sheetData></worksheet>`);
+  return zip.generateAsync({type:"blob",compression:"DEFLATE"});
+}
+$("saveListX").addEventListener("click",async()=>{
+  if(CLS?.source!=="list")return;
+  const list=CLS,state=listChanges.get(list.area),snapshot=state.current;
+  const button=$("saveListX");button.disabled=true;
+  try{
+    const blob=await buildListWorkbook(list);
+    const now=new Date();
+    const date=[now.getFullYear(),now.getMonth()+1,now.getDate()].map(n=>String(n).padStart(2,"0")).join("");
+    const link=document.createElement("a");
+    link.href=URL.createObjectURL(blob);
+    link.download=`함닷_내목록_${MODES[list.area].name}_${date}.xlsx`;
+    document.body.appendChild(link);link.click();
+    setTimeout(()=>{URL.revokeObjectURL(link.href);link.remove();},1000);
+    state.exported=snapshot;
+    if(CLS===list)note("내 목록을 엑셀로 저장했습니다.");
+  }catch(err){
+    if(CLS===list)note("저장하지 못했습니다: "+esc(err.message||"엑셀 파일을 만들지 못했습니다."));
+  }finally{button.disabled=false;}
 });
 
 
@@ -1156,12 +1349,21 @@ el.src.addEventListener("keydown",e=>{
 
 /* ---------- 부서명·희망분야 ---------- */
 function renderExtra(){const st=curSt();const c=clubBytes(st);$("clubB").textContent=c?`= ${c}Byte 차지`:"";const h=byteOf(hopeOf(st).trim()).b;$("hopeB").textContent=h?`= ${h}Byte 차지`:""}
-["club","hours"].forEach(k=>el[k].addEventListener("input",()=>{const st=curSt();if(k==="club"&&st&&st.club!==undefined)st.club=el.club.value;store.set("setuk-"+k,el[k].value);renderExtra();update();if(CLS&&view==="all")renderClassView()}));
+["club","hours"].forEach(k=>el[k].addEventListener("input",()=>{
+  const st=curSt();
+  if(k==="club"&&st&&st.club!==undefined)st.club=el.club.value;
+  if(CLS?.source==="list"){
+    if(k==="hours")CLS.hours=el.hours.value;
+  }else store.set("setuk-"+k,el[k].value);
+  update();
+}));
 el.hope.addEventListener("input",()=>{const st=curSt();if(st){st.hope=el.hope.value;saveDrafts()}else draftStore.set("setuk-hope",el.hope.value);renderExtra();update();if(CLS&&view==="all")renderClassView()});
 
 /* ---------- 영역 전환 ---------- */
 function setArea(m){
-  if(!MODES[m])return;MODE=m;store.set("setuk-mode-area",m);
+  if(!MODES[m])return;
+  if(CLS?.source==="list"&&CLS.area!==m){openList(m);return;}
+  MODE=m;store.set("setuk-mode-area",m);
   document.querySelectorAll("#modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===m));
   const L=MODES[m].max;$("extraClub").hidden=m!=="club";$("extraCareer").hidden=m!=="career";
   $("brandSub").textContent=`2026 학교생활기록부 기재요령 기준 · ${MODES[m].name} ${L/3}자(${L.toLocaleString()}Byte)`;
