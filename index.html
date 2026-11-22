@@ -298,7 +298,7 @@ button:active,a.ghost:active{transform:scale(.97)}
       </div>
       <p id="brandSub">2026 학교생활기록부 기재요령 기준 · 과목별 세부능력 및 특기사항 500자(1,500Byte)</p>
       <div class="classbar">
-        <span class="classinfo" id="classInfo">NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
+        <span class="classinfo" id="classInfo">NEIS에서 내려받은 세특·창체·행특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.</span>
         <label class="ghost file" for="xlsx">학급 엑셀 불러오기<input id="xlsx" type="file" accept=".xlsx" hidden></label>
         <button class="btn" id="saveX" hidden>NEIS 업로드용 엑셀 저장</button>
         <button class="ghost" id="closeX" hidden>학급 닫기</button>
@@ -709,7 +709,7 @@ $("importLegacy").addEventListener("click",()=>resolveLegacy("session"));
 $("eraseLegacy").addEventListener("click",()=>resolveLegacy("erase"));
 $("persistLegacy").addEventListener("click",()=>resolveLegacy("persist"));
 window.addEventListener("beforeunload",e=>{
-  const changed=CLS&&CLS.students.some(st=>st.text!==st.exportedText);
+  const changed=CLS&&CLS.students.some(st=>st.text!==st.exportedText||(st.exportedHope!==undefined&&st.hope!==st.exportedHope));
   const sessionWork=!persistDrafts&&((el.src.value&&el.src.value!==SAMPLE)||el.hope.value||CLS&&CLS.students.some(st=>st.text||st.hope));
   if(changed||sessionWork||storageFailed){e.preventDefault();e.returnValue="닫으면 작업 내용이 사라집니다."}
 });
@@ -882,44 +882,53 @@ async function readClass(buf){
     const rows=[...doc.getElementsByTagNameNS(NS_M,"row")];if(rows.length<2)continue;
     const head={};[...rows[0].getElementsByTagNameNS(NS_M,"c")].forEach(c=>{const h=normH(text(c));if(h)head[h]=colOf(c.getAttribute("r"))});
     const hk=["세부능력및특기사항","행동특성및종합의견","특기사항"].find(k=>head[k]);if(!hk)continue;
-    const J=head[hk];const detected=hk==="세부능력및특기사항"?"subj":hk==="행동특성및종합의견"?"beh":"ca";
-    const C={ban:head["반/번호"],name:head["성명"],stat:head["학적변동구분"],subj:head["과목"],code:head["과목코드"],year:head["학년도"],term:head["학기"],grade:head["학년"]};
+    const J=head[hk];let detected=hk==="세부능력및특기사항"?"subj":hk==="행동특성및종합의견"?"beh":"ca";
+    const C={ban:head["반/번호"],classBan:head["반"],studentNo:head["번호"],area:head["영역구분"],hope:head["희망분야"],name:head["성명"],stat:head["학적변동구분"],subj:head["과목"],code:head["과목코드"],year:head["학년도"],term:head["학기"],grade:head["학년"]};
     const students=[];
     rows.slice(1).forEach(row=>{
       const cells={};[...row.getElementsByTagNameNS(NS_M,"c")].forEach(c=>{cells[colOf(c.getAttribute("r"))]=text(c)});
       if(!Object.values(cells).some(v=>v&&v.trim()))return;
       const g=k=>C[k]?(cells[C[k]]||""):"";
-      students.push({r:+row.getAttribute("r"),no:students.length+1,ban:g("ban"),name:g("name"),stat:g("stat"),subj:g("subj"),code:g("code"),year:g("year"),term:g("term"),grade:g("grade"),text:cells[J]||"",orig:cells[J]||""});
+      const separate=!C.ban&&C.classBan&&C.studentNo;
+      students.push({r:+row.getAttribute("r"),no:separate&&/^\d+$/.test(g("studentNo"))?+g("studentNo"):students.length+1,ban:separate?[g("classBan"),g("studentNo")].join("/"):g("ban"),classBan:g("classBan"),area:g("area"),hope:g("hope"),origHope:g("hope"),name:g("name"),stat:g("stat"),subj:g("subj"),code:g("code"),year:g("year"),term:g("term"),grade:g("grade"),text:cells[J]||"",orig:cells[J]||""});
     });
     if(!students.length)throw new Error("학생 행을 찾지 못했습니다.");
-    return {zip,path,doc,J,students,detected,sheet:sh.getAttribute("name")||""};
+    const firstArea=normH(students[0].area);
+    if(C.area){const areaMode=firstArea.includes("동아리")?"club":firstArea==="자율·자치활동_특기사항"?"auto":firstArea==="진로활동_특기사항"?"career":firstArea==="행동특성및종합의견"?"beh":null;if(areaMode)detected=areaMode;}
+    const areaWarning=C.area&&students.some(st=>normH(st.area)!==firstArea)?"학생 행마다 영역 구분이 다릅니다. 첫 학생 행의 영역 구분을 기준으로 진행합니다.":"";
+    const columns=[{col:J,key:"text"}];if(C.hope)columns.push({col:C.hope,key:"hope"});
+    return {zip,path,doc,J,columns,readCell:text,students,detected,areaWarning,separateClass:!C.ban&&!!(C.classBan&&C.studentNo),sheet:sh.getAttribute("name")||""};
   }
-  throw new Error("'세부능력 및 특기사항', '행동특성 및 종합의견', '특기사항' 열을 찾지 못했습니다. NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀내려받기}한 파일인지 확인하세요.");
+  throw new Error("'세부능력 및 특기사항', '행동특성 및 종합의견', '특기사항' 열을 찾지 못했습니다. NEIS의 해당 영역 메뉴에서 {엑셀내려받기}한 파일인지 확인하세요.");
 }
 
 async function buildClass(){
-  const {zip,path,doc,J,students}=CLS;
+  const {zip,path,doc,J,students,readCell}=CLS;
+  const columns=CLS.columns||[{col:J,key:"text"}];
   const rowMap={};[...doc.getElementsByTagNameNS(NS_M,"row")].forEach(r=>{rowMap[r.getAttribute("r")]=r});
   for(const st of students){
     const row=rowMap[st.r];if(!row)continue;
-    const ref=J+st.r;const cs=[...row.getElementsByTagNameNS(NS_M,"c")];
+    for(const {col,key} of columns){
+    const ref=col+st.r;const cs=[...row.getElementsByTagNameNS(NS_M,"c")];
     let c=cs.find(x=>x.getAttribute("r")===ref);
-    if(!c){c=doc.createElementNS(NS_M,"c");c.setAttribute("r",ref);row.insertBefore(c,cs.find(x=>colNum(colOf(x.getAttribute("r")))>colNum(J))||null)}
+    const val=(st[key]||"").replace(/\r\n?/g,"\n").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
+    if((!c&&!val)||(c&&readCell&&readCell(c)===val))continue;
+    if(!c){c=doc.createElementNS(NS_M,"c");c.setAttribute("r",ref);row.insertBefore(c,cs.find(x=>colNum(colOf(x.getAttribute("r")))>colNum(col))||null)}
     while(c.firstChild)c.removeChild(c.firstChild);
-    const val=st.text.replace(/\r\n?/g,"\n").replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,"");
     if(val){c.setAttribute("t","inlineStr");const is=doc.createElementNS(NS_M,"is"),t=doc.createElementNS(NS_M,"t");
       t.setAttributeNS("http://www.w3.org/XML/1998/namespace","xml:space","preserve");t.textContent=val;is.appendChild(t);c.appendChild(is)}
     else c.removeAttribute("t");
+    }
   }
   let out=new XMLSerializer().serializeToString(doc);
   if(!out.startsWith("<?xml"))out='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+out;
-  zip.file(path,out);
+  zip.file(path,out,{createFolders:false});
   return zip.generateAsync({type:"blob",compression:"DEFLATE"});
 }
 
 function stStatus(st){const t=st.text;if(!t.trim())return "empty";const F=scan(t,LIM_FOR(st),st);if(F.some(f=>f.sev==="err"))return "err";if(F.some(f=>f.sev==="warn"))return "warn";return "ok"}
-const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj,CLS.students.length].join("|")};
-function saveDrafts(){if(!CLS)return;const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if(st.hope)h[st.r]=st.hope});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
+const draftKey=()=>{const m=CLS.students[0];return "setuk-cls:"+[m.year,m.term,m.grade,m.code||m.subj||(CLS.separateClass?[CLS.detected,m.classBan].join(":"):""),CLS.students.length].join("|")};
+function saveDrafts(){if(!CLS)return;const d={},h={};CLS.students.forEach(st=>{if(st.text!==st.orig)d[st.r]=st.text;if((st.hope||"")!==(st.origHope||""))h[st.r]=st.hope||""});draftStore.set(draftKey(),JSON.stringify(d));draftStore.set(draftKey()+":hope",JSON.stringify(h))}
 function note(html){const n=$("notice");n.innerHTML=html;n.hidden=!html}
 
 function label(st){return st.no+"번"}
@@ -934,7 +943,7 @@ function renderRoster(){
 }
 function openStudent(i){
   if(!CLS)return;cur=Math.max(0,Math.min(CLS.students.length-1,i));
-  el.src.value=CLS.students[cur].text;el.hope.value=CLS.students[cur].hope||"";$("edSub").textContent="학급 파일의 J열(세부능력 및 특기사항)을 편집 중";
+  el.src.value=CLS.students[cur].text;el.hope.value=CLS.students[cur].hope||"";$("edSub").textContent=`학급 파일의 ${CLS.J}열(${MODES[MODE].name})을 편집 중`;
   update();el.src.scrollTop=0;
 }
 function dupMap(editedStudent=null,editedText=""){
@@ -967,23 +976,24 @@ $("nextS").addEventListener("click",()=>openStudent(cur+1));
 
 function classMode(on){
   $("roster").hidden=!on;$("tabAll").hidden=!on;$("saveX").hidden=!on;$("closeX").hidden=!on;
-  if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 과목별 세특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
+  if(!on){setView("one");note("");$("classInfo").textContent="NEIS에서 내려받은 세특·창체·행특 엑셀을 불러오면 학급 전체를 한 번에 점검합니다.";}
 }
 $("xlsx").addEventListener("change",async e=>{
   const f=e.target.files[0];e.target.value="";if(!f)return;
   try{
     const data=await readClass(await f.arrayBuffer());
-    CLS={...data,fileName:f.name};CLS.students.forEach(st=>st.exportedText=st.orig);const m=CLS.students[0];
+    CLS={...data,fileName:f.name};CLS.students.forEach(st=>{st.exportedText=st.orig;st.exportedHope=st.origHope});const m=CLS.students[0];
     if(data.detected==="ca"){if(!isCA())setArea("auto")}else if(data.detected!==MODE)setArea(data.detected);
-    $("classInfo").innerHTML=`<b>${esc([m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "))}</b> · ${CLS.students.length}명 · ${esc(f.name)}`;
-    classMode(true);note("");
-    try{const hs=JSON.parse(draftStore.get(draftKey()+":hope")||"{}");CLS.students.forEach(st=>{if(hs[st.r])st.hope=hs[st.r]})}catch(_){}
+    const info=MODE==="subj"?[m.year&&m.year+"학년도",m.term&&m.term+"학기",m.grade&&m.grade+"학년",m.subj].filter(Boolean).join(" "):[m.year&&m.year+"학년도",m.grade&&m.grade+"학년",m.classBan&&m.classBan+"반"].filter(Boolean).join(" ")+" · "+MODES[MODE].name;
+    $("classInfo").innerHTML=`<b>${esc(info)}</b> · ${CLS.students.length}명 · ${esc(f.name)}`;
+    classMode(true);const warning=esc(data.areaWarning||"");note(warning);
+    let hs={};try{hs=JSON.parse(draftStore.get(draftKey()+":hope")||"{}")||{}}catch(_){}
     let saved=null;try{saved=JSON.parse(draftStore.get(draftKey())||"null")}catch(_){}
-    const n=saved?Object.keys(saved).filter(r=>CLS.students.some(st=>String(st.r)===r&&st.orig!==saved[r])).length:0;
-    if(n){note(`이 기기에 저장된 같은 과목·학급의 작업 내용이 ${n}명분 있습니다. <button class="ghost" id="useDraft">작업 내용 불러오기</button> <button class="ghost" id="dropDraft">파일 내용으로 시작</button>`);
-      $("useDraft").onclick=()=>{CLS.students.forEach(st=>{if(saved[st.r]!=null)st.text=saved[st.r]});note("");openStudent(cur)};
-      $("dropDraft").onclick=()=>{draftStore.set(draftKey(),"{}");note("")};}
-    if(m.subj&&/^(공통국어|공통수학|공통영어|통합사회|통합과학|한국사)\s?[12]$/.test(m.subj))note((n?$("notice").innerHTML+"<br>":"")+"공통과목은 1·2를 합산해 500자 이내로 기재합니다 (기재요령 p.208, NEIS 매뉴얼Ⅰ p.513). 이 화면은 이 파일의 과목만 셉니다.");
+    const n=CLS.students.filter(st=>(saved&&saved[st.r]!=null&&st.orig!==saved[st.r])||(hs[st.r]!=null&&st.origHope!==hs[st.r])).length;
+    if(n){note((warning?warning+"<br>":"")+`이 기기에 저장된 같은 과목·학급의 작업 내용이 ${n}명분 있습니다. <button class="ghost" id="useDraft">작업 내용 불러오기</button> <button class="ghost" id="dropDraft">파일 내용으로 시작</button>`);
+      $("useDraft").onclick=()=>{CLS.students.forEach(st=>{if(saved&&saved[st.r]!=null)st.text=saved[st.r];if(hs[st.r]!=null)st.hope=hs[st.r]});note(warning);openStudent(cur)};
+      $("dropDraft").onclick=()=>{draftStore.set(draftKey(),"{}");draftStore.set(draftKey()+":hope","{}");note(warning)};}
+    if(m.subj&&/^(공통국어|공통수학|공통영어|통합사회|통합과학|한국사)\s?[12]$/.test(m.subj))note(($("notice").innerHTML?$("notice").innerHTML+"<br>":"")+"공통과목은 1·2를 합산해 500자 이내로 기재합니다 (기재요령 p.208, NEIS 매뉴얼Ⅰ p.513). 이 화면은 이 파일의 과목만 셉니다.");
     openStudent(0);setView("all");
   }catch(err){note(esc(err.message||"파일을 읽지 못했습니다."))}
 });
@@ -995,10 +1005,12 @@ $("saveX").addEventListener("click",async()=>{
   try{
     const exportedStudents=CLS.students;
     const exportedTexts=exportedStudents.map(st=>st.text);
+    const exportedHopes=exportedStudents.map(st=>st.hope);
     const blob=await buildClass();
     {const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000)}
-    exportedStudents.forEach((st,i)=>st.exportedText=exportedTexts[i]);
-    note("저장했습니다. NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀업로드} 후 {저장}하세요 (NEIS 매뉴얼Ⅰ p.514)."+(over.length?` ${LIM().toLocaleString()}Byte를 넘는 학생이 있습니다: ${over.join(", ")}번.`:""));
+    exportedStudents.forEach((st,i)=>{st.exportedText=exportedTexts[i];st.exportedHope=exportedHopes[i]});
+    const upload=CLS.detected==="subj"?"NEIS [교과담임-성적-성적처리-과목별세부능력및특기사항]에서 {엑셀업로드} 후 {저장}하세요 (NEIS 매뉴얼Ⅰ p.514).":"NEIS에서 이 파일을 내려받은 메뉴의 {엑셀업로드} 후 {저장}하세요.";
+    note("저장했습니다. "+upload+(over.length?` ${LIM().toLocaleString()}Byte를 넘는 학생이 있습니다: ${over.join(", ")}번.`:""));
   }catch(err){
     if(err&&err.code==="declined")note("저장을 취소했습니다.");
     else if(err&&err.code==="rate_limited")note("저장 확인 창이 이미 열려 있습니다. 그 창을 먼저 닫아 주세요.");
