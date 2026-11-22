@@ -143,7 +143,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .classbar .file{display:inline-flex;align-items:center}
 .classinfo{font-size:var(--fs-5);color:var(--muted)}
 .classinfo b{color:var(--ink);font-weight:600}
-.roster{display:flex;flex-direction:column;gap:8px;flex:none}
+.roster{display:flex;flex-direction:column;gap:8px;flex:none;padding:3px 4px}
 .list-fields{display:flex;align-items:center;flex-wrap:wrap;gap:6px}
 .list-fields label{display:inline-flex;align-items:center;gap:4px}
 .list-fields input{width:7em}
@@ -156,8 +156,8 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .nav strong{font-size:var(--fs-3);font-weight:var(--fw-3)}
 .nav .who{font-size:var(--fs-5);color:var(--muted)}
-.nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:5px}
-.nums button{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--sheet);font-size:var(--fs-5);cursor:pointer;padding:0}
+.nums{display:grid;grid-template-columns:repeat(auto-fill,minmax(34px,1fr));gap:5px;padding:3px 4px;align-items:center}
+.nums button{height:32px;border-radius:8px;border:1px solid var(--line);background:var(--sheet);font-size:var(--fs-5);cursor:pointer;padding:0;display:grid;place-items:center}
 .nums button.empty{border-style:dashed;color:var(--muted)}
 .nums button.ok{background:var(--soft)}
 .nums button.warn{background:var(--warn-bg);border-color:var(--warn)}
@@ -314,11 +314,11 @@ button:active,a.ghost:active{transform:scale(.97)}
         <span id="settingsDot" class="settings-dot" title="학교 식별어를 넣으면 학교명도 점검합니다"></span>
         <div id="settingsPanel" class="settings-panel" hidden>
         <label class="blk" for="blocked">학교 식별어
-          <input id="blocked" type="text" placeholder="학교명, 약칭, 축제명, 지역명 (쉼표로 구분)">
+          <input id="blocked" type="text" placeholder="학교명, 약칭, 축제명, 지역명 (쉼표로 구분)" autocomplete="off">
           <small>동아리명에 붙은 학교 약칭도 넣으세요</small>
         </label>
         <label class="blk" for="orgs">기관·상호 추가
-          <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)">
+          <input id="orgs" type="text" placeholder="사전에 없는 이름 (쉼표로 구분)" autocomplete="off">
         </label>
       <div class="classbar">
         <label><input id="persistDrafts" type="checkbox"> 이 기기에 계속 저장</label>
@@ -373,8 +373,8 @@ button:active,a.ghost:active{transform:scale(.97)}
               <div class="legend2"><span class="l-empty">미입력</span><span class="l-ok">통과</span><span class="l-warn">확인</span><span class="l-err">오류·초과</span></div>
             </div>
             <div class="list-fields" id="listFields" hidden>
-              <label>반 <input id="listBan" type="text"></label>
-              <label>번호 <input id="listNumber" type="number" min="1" step="1"></label>
+              <label>반 <input id="listBan" type="text" autocomplete="off"></label>
+              <label>번호 <input id="listNumber" type="number" min="1" step="1" autocomplete="off"></label>
               <label>이름 <input id="listName" type="text" autocomplete="off"></label>
               <small>창을 닫으면 이름이 사라집니다. 파일로 저장해 주세요.</small>
               <button class="ghost" id="deleteListStudent">삭제</button>
@@ -390,7 +390,7 @@ button:active,a.ghost:active{transform:scale(.97)}
           <div class="field">
             <div id="findingTip" class="finding-tip" role="region" aria-label="현재 점검 항목" hidden></div>
             <div class="backdrop" id="backdrop" aria-hidden="true"></div>
-            <textarea id="src" spellcheck="false" aria-label="세특 문장 입력" placeholder="세특을 붙여 넣거나, 위의 패턴 틀로 시작하세요."></textarea>
+            <textarea id="src" spellcheck="false" aria-label="세특 문장 입력" placeholder="세특을 붙여 넣거나, 위의 패턴 틀로 시작하세요." autocomplete="off"></textarea>
           </div>
           <div class="meter" aria-live="polite">
             <div class="meter-nums">
@@ -407,8 +407,8 @@ button:active,a.ghost:active{transform:scale(.97)}
             <details id="diagDetails" hidden><summary id="diagSummary"></summary><div id="diag"></div></details>
             <div class="meter-foot">
               <label for="goal">목표 바이트</label><input id="goal" type="number" min="0" max="1500" step="10" placeholder="예: 900">
-              <span class="extra" id="extraClub" hidden><label for="club">부서명</label><input id="club" type="text" placeholder="예: 방송반"><label for="hours">이수시간</label><input id="hours" type="number" min="0" max="999" placeholder="14"><span class="xb" id="clubB"></span></span>
-              <span class="extra" id="extraCareer" hidden><label for="hope">희망분야</label><input id="hope" type="text" placeholder="예: 교사"><span class="xb" id="hopeB"></span></span>
+              <span class="extra" id="extraClub" hidden><label for="club">부서명</label><input id="club" type="text" placeholder="예: 방송반" autocomplete="off"><label for="hours">이수시간</label><input id="hours" type="number" min="0" max="999" placeholder="14" autocomplete="off"><span class="xb" id="clubB"></span></span>
+              <span class="extra" id="extraCareer" hidden><label for="hope">희망분야</label><input id="hope" type="text" placeholder="예: 교사" autocomplete="off"><span class="xb" id="hopeB"></span></span>
               <div class="modes" role="group" aria-label="기재 영역" id="modes">
                 <button data-m="subj" aria-pressed="true">교과 세특<small>1500</small></button>
                 <button data-m="auto" aria-pressed="false">자율·자치<small>1500</small></button>
@@ -740,10 +740,10 @@ document.addEventListener("click",event=>{if(!event.target.closest(".settings-wr
 const isListNameKey=k=>k.startsWith("setuk-list-names:");
 const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:")||k.startsWith("setuk-list:")||isListNameKey(k);
 let namesUnavailable=false;
-function clearNamesOnNewNavigation(){
+function clearNamesOnNewNavigation(persisted=false){
   let reload=false;
   try{reload=performance.getEntriesByType("navigation")[0]?.type==="reload";}catch(_){}
-  if(reload)return;
+  if(reload&&!persisted)return false;
   try{
     Object.keys(sessionStorage).filter(isListNameKey).forEach(key=>sessionStorage.removeItem(key));
   }catch(_){
@@ -751,6 +751,7 @@ function clearNamesOnNewNavigation(){
     storageFailed=true;
     $("storageStatus").textContent="이름 보관 상태를 확인하지 못했습니다. 이름을 다시 입력해 주세요.";
   }
+  return true;
 }
 function draftKeys(storage){return Object.keys(storage).filter(isDraftKey)}
 let persistDrafts=store.get("setuk-persist")==="1";
@@ -774,7 +775,7 @@ function changePersistence(on){
 function eraseWork(){
   try{[localStorage,sessionStorage].forEach(storage=>draftKeys(storage).forEach(k=>storage.removeItem(k)))}
   catch(e){$("storageStatus").textContent="저장 내용을 지우지 못했습니다.";return}
-  CLS=null;cur=-1;suspendedList=null;listChanges.clear();classMode(false);restoreExtraSettings();el.src.value="";el.hope.value="";
+  CLS=null;cur=-1;suspendedList=null;listChanges.clear();standaloneText="";classMode(false);restoreExtraSettings();el.src.value="";el.hope.value="";
   paintBackdrop("",[]);renderFindings([]);renderMeter("");renderDiag("");renderSpell("");
   previewSelection=null;renderPreview();
   $("legacyDrafts").hidden=true;$("edSub").textContent="";
@@ -920,6 +921,7 @@ function renderMeter(t){
   const g=parseInt($("goal").value,10);let gm=$("bar").querySelector(".goal");
   if(g>0&&g<=L){if(!gm){gm=document.createElement("span");gm.className="goal";$("bar").appendChild(gm)}gm.style.left=(g/L*100)+"%";gm.title="목표 "+g+" Byte"}else if(gm)gm.remove();
 }
+let standaloneText="",nameInputRevision=0;
 function update(){
   updateSettingsDot();
   if(typeof renderExtra==="function")renderExtra();
@@ -927,8 +929,38 @@ function update(){
   previewSelection=null;
   paintBackdrop(t,F);renderFindings(F);renderMeter(t);renderDiag(t);renderSpell(t);renderPreview();
   if(CLS&&cur>=0){CLS.students[cur].text=t;saveDrafts();renderRoster();if(view==="all")renderClassView()}
-  else if(!CLS&&t!==SAMPLE)draftStore.set("setuk-draft",t);
+  else if(!CLS){standaloneText=t;if(t!==SAMPLE)draftStore.set("setuk-draft",t);}
 }
+function reconcileRestoredForm(clearNames=true,persisted=false){
+  const cleared=clearNames&&clearNamesOnNewNavigation(persisted);
+  if(cleared&&CLS?.source==="list"){
+    if(CLS.students.some(st=>st.name))CLS.namesMissing=true;
+    CLS.students.forEach(st=>{st.name="";});
+    $("listNamesMissing").hidden=!CLS.namesMissing;
+  }
+  if(cleared&&!$("nameNoticeLayer").hidden)closeNameNotice();
+  const st=curSt();
+  el.src.value=st?st.text:standaloneText;
+  el.hope.value=st?(st.hope||""):(draftStore.get("setuk-hope")||"");
+  el.club.value=st?.club!==undefined?st.club:(store.get("setuk-club")||"");
+  el.hours.value=CLS?.source==="list"?CLS.hours:(store.get("setuk-hours")||"");
+  el.blocked.value=store.get("setuk-blocked")||"";
+  el.orgs.value=store.get("setuk-orgs")||"";
+  $("goal").value=store.get("setuk-goal")||"";
+  const list=CLS?.source==="list";
+  $("listBan").value=list?st.classBan:"";
+  $("listNumber").value=list?st.number:"";
+  $("listName").value=list?st.name:"";
+  update();
+}
+function queueFormReconciliation(persisted=false){
+  const revision=nameInputRevision;
+  setTimeout(()=>reconcileRestoredForm(revision===nameInputRevision,persisted),0);
+}
+window.addEventListener("pageshow",event=>{
+  reconcileRestoredForm(true,event.persisted);
+  queueFormReconciliation(event.persisted);
+});
 el.src.addEventListener("input",update);
 el.src.addEventListener("scroll",()=>{el.bd.scrollTop=el.src.scrollTop});
 try{new ResizeObserver(()=>syncBackdrop()).observe(el.src)}catch(_){window.addEventListener("resize",syncBackdrop)}
@@ -1313,6 +1345,7 @@ for(const id of ["listBan","listNumber","listName"]){
       st.number=valueAsNumber;
     }
     if(id==="listName"){
+      nameInputRevision++;
       st.name=value;CLS.namesMissing=false;$("listNamesMissing").hidden=true;
     }
     st.ban=st.classBan?st.classBan+"/"+st.number:String(st.number);
@@ -1473,6 +1506,7 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
   const g=store.get("setuk-goal");if(g)$("goal").value=g;
   const am=store.get("setuk-mode-area");setArea(MODES[am]?am:"subj");
   setPageTab(store.get("setuk-tab"));
+  queueFormReconciliation();
 })();
 </script>
 
