@@ -176,12 +176,12 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 
 /* 패턴 */
 /* 3단계: 섹션 제목 */
-.diag{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
-.diag div{background:var(--soft);border-radius:12px;padding:9px 12px}
-.diag dt{font-size:var(--fs-6);color:var(--muted)}
-.diag dd{margin:0;font-size:20px;font-weight:700}
+.diag{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none;gap:8px}
+.diag div{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0;background:var(--soft);border-radius:12px;padding:6px 10px}
+.diag dt{min-width:0;font-size:var(--fs-6);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.diag dd{min-width:0;max-width:50%;margin:0;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .diag dd small{font-size:var(--fs-6);color:var(--muted);font-weight:400}
-.myflow{font-size:var(--fs-5)}
+.myflow{font-size:var(--fs-5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 @media (max-width:860px){
   html,body{height:auto}
@@ -203,7 +203,7 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .settings-panel .blk{align-items:flex-start;flex-wrap:wrap}
 .settings-panel .blk input{max-width:100%;width:100%}
 .settings-panel .classbar{margin:0}
-#diagDetails{font-size:var(--fs-5);color:var(--muted)}
+#diagDetails{min-width:0;font-size:var(--fs-5);color:var(--muted)}
 #diagSummary{cursor:pointer}
 
 .settings-panel{opacity:0;transform:translateY(-4px);transition:opacity var(--dur-l) var(--ease),transform var(--dur-l) var(--ease)}
@@ -227,7 +227,10 @@ button:active,a.ghost:active{transform:scale(.97)}
 .finding-tip strong{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .finding-tip>span{max-width:14em;overflow:hidden;text-overflow:ellipsis}
 .finding-tip .pill,.finding-tip button{flex:none}
-#diag{max-height:8em;overflow:auto}
+#diag{min-width:0;container-type:inline-size}
+@container(max-width:589px){
+  .diag{grid-auto-flow:row;grid-template-columns:repeat(auto-fit,minmax(min(110px,100%),1fr));grid-auto-columns:auto}
+}
 #byteMethod p{max-height:8em;overflow:auto}
 @media(min-width:861px) and (min-height:600px){
   html,body{height:100%;overflow:hidden}
@@ -257,6 +260,7 @@ button:active,a.ghost:active{transform:scale(.97)}
   .meter-foot .modes{flex:none}
   .meter-foot input{padding-block:2px}
   #diagDetails{align-self:start}
+  #diagDetails[open]{grid-column:1/-1}
 }
 @media(max-width:860px),(max-height:599px){
   html,body{height:auto;overflow:auto}
@@ -271,7 +275,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6.1</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.6.2</small></h1>
       <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
       <div class="settings-wrap">
         <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
@@ -411,7 +415,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.6.1"; // 2026-11-22
+const APP_VERSION="1.6.2"; // 2026-11-22
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -821,6 +825,7 @@ function renderDiag(t){
 <div><dt>평가어 문장</dt><dd>${jud}/${n}</dd></div>
 <div><dt>확장·연결어</dt><dd>${conn.length}<small> ${conn.length?esc(conn.join(", ")):"없음"}</small></dd></div>
 </dl><p class="myflow">흐름: ${flow}</p>`;
+  box.querySelector(".myflow").title=box.querySelector(".myflow").textContent;
 }
 
 
