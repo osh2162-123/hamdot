@@ -148,6 +148,11 @@ a.ghost{display:inline-flex;align-items:center;text-decoration:none;color:inheri
 .list-fields label{display:inline-flex;align-items:center;gap:4px}
 .list-fields input{width:7em}
 .list-fields input[type=number]{width:4em}
+.name-notice-layer{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:16px;background:rgba(30,35,41,.35)}
+.name-notice{width:min(440px,100%);padding:24px;background:var(--sheet);border-radius:var(--r-card);box-shadow:var(--shadow)}
+.name-notice h2{font-size:var(--fs-2);margin:0 0 12px}
+.name-notice p{margin:0 0 20px}
+.name-notice-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .nav strong{font-size:var(--fs-3);font-weight:var(--fw-3)}
 .nav .who{font-size:var(--fs-5);color:var(--muted)}
@@ -302,7 +307,7 @@ button:active,a.ghost:active{transform:scale(.97)}
 <div class="app">
   <header class="top">
     <div class="brand">
-      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.7</small></h1>
+      <h1><span class="mark" aria-hidden="true">함.</span>함닷<small>HAMDOT v1.7.1</small></h1>
       <a class="ghost" href="reference.html" target="_blank" rel="noopener">참고 자료 ↗</a>
       <div class="settings-wrap">
         <button class="ghost" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel">⚙ 설정</button>
@@ -371,7 +376,7 @@ button:active,a.ghost:active{transform:scale(.97)}
               <label>반 <input id="listBan" type="text"></label>
               <label>번호 <input id="listNumber" type="number" min="1" step="1"></label>
               <label>이름 <input id="listName" type="text" autocomplete="off"></label>
-              <small>이름은 이 탭에서만 기억합니다.</small>
+              <small>창을 닫으면 이름이 사라집니다. 파일로 저장해 주세요.</small>
               <button class="ghost" id="deleteListStudent">삭제</button>
             </div>
             <small id="listNamesMissing" hidden>이름은 저장하지 않아 비어 있습니다. 엑셀로 저장해 둔 파일을 참고해 다시 넣어 주세요.</small>
@@ -468,11 +473,21 @@ button:active,a.ghost:active{transform:scale(.97)}
   <footer class="stat"><a href="licenses.html">출처와 라이선스</a></footer>
 </div>
 
+<div class="name-notice-layer" id="nameNoticeLayer" hidden>
+  <section class="name-notice" role="dialog" aria-modal="true" aria-labelledby="nameNoticeTitle" aria-describedby="nameNoticeText">
+    <h2 id="nameNoticeTitle">개인 정보 안내</h2>
+    <p id="nameNoticeText">창을 닫으면 학생 이름 등 개인 정보가 모두 사라집니다. 파일로 저장해 주세요.</p>
+    <div class="name-notice-actions">
+      <button class="ghost" id="nameNoticeOK">확인</button>
+      <button class="btn" id="nameNoticeSave">지금 엑셀로 저장</button>
+    </div>
+  </section>
+</div>
 <script>
 const SAMPLE="열대 우림의 개발과 보전 문제를 다룬 단원에서 서로 다른 시기의 위성 영상 자료를 비교하여 산림 면적이 줄어든 지역을 찾아 지도로 표현함. 감소 원인을 농경지 확대와 목재 수출로 나누어 정리하고, 원주민의 생계와 생태계 보전이 충돌하는 지점을 모둠 토론에서 근거와 함께 제시함. 이후 REDD+ 제도가 산림 보전에 미친 영향을 추가로 조사하여 보고서를 작성함. 보전 사업 이후 연간 감소 폭이 2% 수준으로 줄었다는 통계를 인용하였다. 매우 탁월하고 성실한 학생임.";
 
 /* ---------- 기재 영역 (요령 p.208) ---------- */
-const APP_VERSION="1.7"; // 2026-11-22
+const APP_VERSION="1.7.1"; // 2026-11-22
 const MODES={
   subj:{name:"과목별 세부능력 및 특기사항",max:1500},
   auto:{name:"자율·자치활동 특기사항",max:1500},
@@ -724,6 +739,19 @@ document.addEventListener("click",event=>{if(!event.target.closest(".settings-wr
 /* 학생 작업 내용은 선택한 저장소에서만 유지합니다. */
 const isListNameKey=k=>k.startsWith("setuk-list-names:");
 const isDraftKey=k=>k==="setuk-draft"||k==="setuk-hope"||k.startsWith("setuk-cls:")||k.startsWith("setuk-list:")||isListNameKey(k);
+let namesUnavailable=false;
+function clearNamesOnNewNavigation(){
+  let reload=false;
+  try{reload=performance.getEntriesByType("navigation")[0]?.type==="reload";}catch(_){}
+  if(reload)return;
+  try{
+    Object.keys(sessionStorage).filter(isListNameKey).forEach(key=>sessionStorage.removeItem(key));
+  }catch(_){
+    namesUnavailable=true;
+    storageFailed=true;
+    $("storageStatus").textContent="이름 보관 상태를 확인하지 못했습니다. 이름을 다시 입력해 주세요.";
+  }
+}
 function draftKeys(storage){return Object.keys(storage).filter(isDraftKey)}
 let persistDrafts=store.get("setuk-persist")==="1";
 let storageFailed=false;
@@ -1159,6 +1187,37 @@ function listData(list){
 function listSnapshot(list){
   return JSON.stringify([listData(list),list.students.map(st=>st.name)]);
 }
+let nameNoticeShown=false;
+function showNameNotice(){
+  if(nameNoticeShown)return;
+  try{if(sessionStorage.getItem("setuk-name-notice-shown")==="1")return;}catch(_){}
+  nameNoticeShown=true;
+  try{sessionStorage.setItem("setuk-name-notice-shown","1");}catch(_){}
+  $("nameNoticeLayer").hidden=false;
+  document.querySelector(".app").inert=true;
+  $("nameNoticeOK").focus();
+}
+function closeNameNotice(){
+  $("nameNoticeLayer").hidden=true;
+  document.querySelector(".app").inert=false;
+  if(CLS?.source==="list")$("listName").focus();
+}
+$("nameNoticeOK").addEventListener("click",closeNameNotice);
+$("nameNoticeSave").addEventListener("click",()=>{
+  closeNameNotice();setPageTab("check");$("saveListX").focus();$("saveListX").click();
+});
+document.addEventListener("keydown",event=>{
+  if($("nameNoticeLayer").hidden)return;
+  event.stopPropagation();
+  if(event.key==="Escape"){
+    event.preventDefault();closeNameNotice();return;
+  }
+  if(event.key==="Tab"){
+    event.preventDefault();
+    const next=document.activeElement===$("nameNoticeOK")?$("nameNoticeSave"):$("nameNoticeOK");
+    next.focus();
+  }
+},true);
 function saveListDraft(list){
   const {area}=list;
   const student=list.students[0];
@@ -1193,7 +1252,7 @@ function openSingle(){
 function openList(area,index=0){
   const data=parseDraft(draftStore.get(listKey(area)),{});
   let rawNames=null;
-  try{rawNames=sessionStorage.getItem(listNamesKey(area));}catch(_){}
+  try{if(!namesUnavailable)rawNames=sessionStorage.getItem(listNamesKey(area));}catch(_){}
   const names=parseDraft(rawNames,{});
   const hasStudents=Array.isArray(data.students)&&data.students.length>0;
   const students=hasStudents?data.students.map(({no,classBan,number,text,hope,club})=>({
@@ -1258,6 +1317,7 @@ for(const id of ["listBan","listNumber","listName"]){
     }
     st.ban=st.classBan?st.classBan+"/"+st.number:String(st.number);
     update();
+    if(id==="listName"&&value.length)showNameNotice();
   });
 }
 $("listNumber").addEventListener("blur",()=>{if(CLS?.source==="list")$("listNumber").value=curSt().number;});
@@ -1399,6 +1459,7 @@ $("modes").addEventListener("click",e=>{const b=e.target.closest("button[data-m]
 
 /* ---------- 시작 ---------- */
 (function init(){
+  clearNamesOnNewNavigation();
   $("tplHint").title=$("tplHint").textContent;
   try{$("legacyDrafts").hidden=persistDrafts||draftKeys(localStorage).length===0}catch(_){}
   // 예시 문장은 이 기기에서 맨 처음 한 번만 보여 줌
